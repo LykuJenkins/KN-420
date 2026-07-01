@@ -63,7 +63,7 @@ This is a single `index.html` file — no build step needed.
 - [Dexie.js](https://dexie.org/) — IndexedDB wrapper for local storage
 - **MediaRecorder API** — audio recording
 - **Wikipedia REST API** — strain lookups
-- **Google Gemini 2.0 Flash** — Dave the chatbot (bring your own key)
+- **Google Gemini (gemini-flash-latest)** — Dave the chatbot (bring your own key)
 - **PWA** — manifest + service worker built at runtime via Blob URLs (keeps file single-file)
 
 ## 📱 Install as an App
