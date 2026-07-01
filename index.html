@@ -2165,6 +2165,7 @@
     flex-direction: column;
     overflow: hidden;
     animation: dave-popup-slide 0.3s ease;
+    overscroll-behavior: contain;
   }
   .dave-popup.open { display: flex; }
   @keyframes dave-popup-slide {
@@ -2212,11 +2213,15 @@
     flex: 1 1 0;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 14px 16px;
     display: flex;
     flex-direction: column;
     gap: 10px;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    position: relative;
   }
   .dave-popup-messages .msg {
     max-width: 85%;
@@ -4002,6 +4007,42 @@
     </div>`;
   }
 
+  // Render Dave chat section for the session detail modal
+  function renderModalDaveChat(session) {
+    const chat = session.daveChat || [];
+    const apiKey = getApiKey();
+    const chatCount = chat.length;
+    let chatHtml = '';
+    if (!apiKey) {
+      chatHtml = '<div class="dave-chat-empty">Connect Dave (tap the 🚪 button) to chat about this session.</div>';
+    } else if (chatCount === 0) {
+      chatHtml = '<div class="dave-chat-empty">Ask Dave about this session, man.</div>';
+    } else {
+      chatHtml = chat.map(m => {
+        const cls = m.role === 'user' ? 'user' : 'dave';
+        return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+      }).join('');
+    }
+
+    return `
+      <div class="dave-chat-section" style="margin-top:16px">
+        <div class="dave-chat-section-header" id="modal-dave-toggle-${session.id}">
+          <span style="font-size:18px">🚪</span>
+          <span class="dave-chat-section-title">Dave Chat</span>
+          ${chatCount > 0 ? `<span style="font-size:10px;color:var(--text-mute)">${chatCount} message${chatCount === 1 ? '' : 's'}</span>` : ''}
+          <span class="dave-chat-toggle">${chatCount > 0 ? '▼' : '▶'}</span>
+        </div>
+        <div class="dave-chat-section-body ${chatCount > 0 ? 'open' : ''}" id="modal-dave-body-${session.id}">
+          <div id="modal-dave-chat-${session.id}" class="dave-chat-mini">${chatHtml}</div>
+          <div class="dave-chat-input-row">
+            <input type="text" id="modal-dave-input-${session.id}" placeholder="Chat with Dave about this..." autocomplete="off">
+            <button class="dave-chat-send" id="modal-dave-send-${session.id}">➤</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function showSessionDetail(id) {
     const s = allSessions.find(x => x.id === id);
     if (!s) return;
@@ -4087,6 +4128,8 @@
         ${audioHtml}
       </div>` : ''}
 
+      ${renderModalDaveChat(s)}
+
       <div class="modal-actions">
         <button class="btn-secondary" id="edit-btn">✏️ Edit Session Data</button>
         <button class="btn-secondary" id="duplicate-btn">📋 Duplicate</button>
@@ -4106,6 +4149,32 @@
         refreshAll();
       }
     });
+
+    // Wire up modal Dave chat
+    const daveToggle = document.getElementById('modal-dave-toggle-' + id);
+    if (daveToggle) {
+      daveToggle.addEventListener('click', () => {
+        const body = document.getElementById('modal-dave-body-' + id);
+        const toggle = daveToggle.querySelector('.dave-chat-toggle');
+        if (body) {
+          const isOpen = body.classList.toggle('open');
+          if (toggle) toggle.textContent = isOpen ? '▼' : '▶';
+        }
+      });
+    }
+    const daveSendBtn = document.getElementById('modal-dave-send-' + id);
+    if (daveSendBtn) {
+      daveSendBtn.addEventListener('click', () => sendModalDaveMessage(id));
+    }
+    const daveInput = document.getElementById('modal-dave-input-' + id);
+    if (daveInput) {
+      daveInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sendModalDaveMessage(id);
+        }
+      });
+    }
   }
 
   function closeModal() {
@@ -4874,6 +4943,100 @@
     if (toggle) toggle.textContent = isOpen ? '▼' : '▶';
   }
 
+  // ===== Dave Chat in Session Detail Modal =====
+  async function sendModalDaveMessage(sessionId) {
+    const input = document.getElementById('modal-dave-input-' + sessionId);
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      showToast('Connect Dave first (tap the 🚪 button)');
+      return;
+    }
+
+    const session = allSessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    // Append user message
+    const chat = session.daveChat || [];
+    chat.push({ role: 'user', content: text, createdAt: Date.now() });
+    await db.sessions.update(sessionId, { daveChat: chat });
+
+    // Clear input and re-render with typing indicator
+    input.value = '';
+    input.disabled = true;
+    const chatContainer = document.getElementById('modal-dave-chat-' + sessionId);
+    if (chatContainer) {
+      chatContainer.innerHTML = chat.map(m => {
+        const cls = m.role === 'user' ? 'user' : 'dave';
+        return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+      }).join('') + '<div class="msg dave typing" id="modal-dave-typing-' + sessionId + '">Dave is thinking...</div>';
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    try {
+      // Build context-aware prompt
+      let contextPrompt = DAVE_SYSTEM_PROMPT;
+      contextPrompt += '\n\nThe user is chatting with you about a specific session. Here\'s the context:';
+      if (session.strain) contextPrompt += '\nStrain: ' + session.strain;
+      if (session.type) contextPrompt += '\nType: ' + session.type;
+      if (session.notes) contextPrompt += '\nNotes: ' + session.notes;
+      if (session.rabbitHole) {
+        if (session.rabbitHole.start) contextPrompt += '\nRabbit hole start: ' + session.rabbitHole.start;
+        if (session.rabbitHole.end) contextPrompt += '\nRabbit hole end: ' + session.rabbitHole.end;
+        if (session.rabbitHole.waypoints && session.rabbitHole.waypoints.length) {
+          contextPrompt += '\nWaypoints: ' + session.rabbitHole.waypoints.join(' → ');
+        }
+      }
+      contextPrompt += '\n\nUse this context to give thoughtful, personalized responses about THEIR specific session. Don\'t bring up the context unless relevant.';
+
+      const history = chat.map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }]
+      }));
+
+      const result = await streamGemini(history, contextPrompt, apiKey, (partial) => {
+        const typingEl = document.getElementById('modal-dave-typing-' + sessionId);
+        if (typingEl) {
+          typingEl.textContent = partial;
+          typingEl.classList.remove('typing');
+          if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+      });
+
+      chat.push({ role: 'dave', content: result.text, createdAt: Date.now() });
+      await db.sessions.update(sessionId, { daveChat: chat });
+      // Update the in-memory session so re-opening the modal shows the latest
+      const updatedSession = allSessions.find(s => s.id === sessionId);
+      if (updatedSession) updatedSession.daveChat = chat;
+      // Re-render just the chat portion
+      if (chatContainer) {
+        chatContainer.innerHTML = chat.map(m => {
+          const cls = m.role === 'user' ? 'user' : 'dave';
+          return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+        }).join('');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+      // Update the toggle message count
+      const toggle = document.getElementById('modal-dave-toggle-' + sessionId);
+      if (toggle) {
+        const countSpan = toggle.querySelector('span[style*="font-size:10px"]');
+        if (countSpan) countSpan.textContent = chat.length + ' message' + (chat.length === 1 ? '' : 's');
+      }
+    } catch (err) {
+      console.error(err);
+      const typingEl = document.getElementById('modal-dave-typing-' + sessionId);
+      if (typingEl) {
+        typingEl.textContent = 'Dave stepped out. Try again?';
+        typingEl.style.color = 'var(--danger)';
+      }
+    } finally {
+      input.disabled = false;
+      input.focus();
+    }
+  }
+
   // ===== Library View =====
   function setupLibrary() {
     document.getElementById('library-search').addEventListener('input', renderLibrary);
@@ -5237,24 +5400,22 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     scrollChatToBottom();
   }
 
-  // Robust scroll-to-bottom that works in Chrome, Firefox, Safari, AND Edge.
-  // Edge sometimes miscomputes scrollHeight during flex layout, so we use
-  // scrollIntoView on the last child + requestAnimationFrame for deferred layout.
+  // Robust scroll-to-bottom that works on all browsers including mobile.
+  // IMPORTANT: Do NOT use scrollIntoView — it can scroll parent elements
+  // on mobile, causing the whole page to jump. Only use scrollTop on the
+  // container itself.
   function scrollChatToBottom() {
     const container = document.getElementById('chat-messages');
     if (!container) return;
+    // Direct approach — may fire before layout settles
+    container.scrollTop = container.scrollHeight;
+    // Defer to next frame when layout is final
     requestAnimationFrame(() => {
-      // Try the direct approach first
       container.scrollTop = container.scrollHeight;
-      // Then use scrollIntoView on the last child for browsers that misbehave
-      const lastChild = container.lastElementChild;
-      if (lastChild) {
-        lastChild.scrollIntoView({ behavior: 'auto', block: 'end' });
-      }
-      // Fallback: force another scrollTop set after layout settles
-      requestAnimationFrame(() => {
-        container.scrollTop = container.scrollHeight;
-      });
+    });
+    // And one more frame for slow renderers / streaming text
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight;
     });
   }
 
