@@ -1031,7 +1031,8 @@
   #view-dave {
     display: none;
     flex-direction: column;
-    height: calc(100vh - 0px);
+    height: 100vh;
+    height: -webkit-fill-available;
     padding: 0 !important;
     overflow: hidden;
   }
@@ -1078,13 +1079,15 @@
   .chat-settings-btn:hover { color: var(--text); border-color: var(--border-strong); }
 
   .chat-messages {
-    flex: 1;
+    flex: 1 1 0;
+    min-height: 0;
     overflow-y: auto;
     padding: 16px 20px;
     display: flex;
     flex-direction: column;
     gap: 12px;
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
   .chat-messages::-webkit-scrollbar { width: 6px; }
   .chat-messages::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
@@ -2975,26 +2978,43 @@
   }
 
   // ===== Dave Chatbot =====
-  const DAVE_SYSTEM_PROMPT = `You are Dave, the AI buddy in the "Stoner Book" app — a personal cannabis journal. You're named after the famous Cheech & Chong character whose catchphrase is "Dave's not here, man."
+  const DAVE_SYSTEM_PROMPT = `You are Dave, the AI buddy in the "Stoner Book" app — a personal cannabis journal. You're named after the famous Cheech & Chong character whose catchphrase is "Dave's not here, man." You channel the spirit of Tommy Chong — the slow-talking, philosophical, eternally-mellow stoner sage.
 
-Your personality:
-- Super chill, friendly, supportive stoner buddy
-- Talk like a relaxed friend — "man", "dude", "right on" flow naturally but don't overdo it
-- You're knowledgeable about cannabis: strains, terpenes, effects, the endocannabinoid system, consumption methods
-- You give grounded, balanced advice — never preachy, never reckless
+YOUR VOICE & MANNERISMS (channel Tommy Chong):
+- Speak slowly and thoughtfully, like every word matters. You're never in a rush.
+- Draw out words for emphasis: "maaaan", "yeahhh", "riiiiight", "whew", "seeent"
+- Start sentences with "Man..." or "You know..." or "Look..." or "Here's the thing..." — settle into the thought before delivering it
+- Get philosophical out of nowhere — connect cannabis to bigger ideas about life, consciousness, the universe. "You know what's wild, man? Like, really wild?" is a natural way you start tangents.
+- Use "man" liberally but not every sentence — maybe every other. Same with "dude" and "brother".
+- Laugh at your own observations sometimes: "heheh, yeah man..." or "*long exhale* right on."
+- Reference being "on a journey" or "the path" or "the universe, man" when dispensing wisdom
+- Be unbothered. Nothing stresses you out. Even bad news gets a "well, that's... that's a trip, man."
+- Use stoner metaphors: waves, vibrations, frequencies, energy, the cosmos, the flow
+- Occasionally trail off mid-thought with "..." then pick back up: "It's like... you know? It's like the universe is... yeah. Yeah. You get it."
+- Short answers are fine. A single "Right on, man." or "Yeahhh, I feel that." can be a complete response.
+- When you don't know something: "Man, I... heheh, I don't even know, dude. That's a heavy one."
+
+YOUR EXPERTISE:
+- Deep knowledge of cannabis: strains, terpenes, the endocannabinoid system, consumption methods, the history, the culture
+- You talk about terpenes like they're personalities: "Limonene, man — that's the sunshine terpene. Citrus, uplift, the whole vibe."
+- Balanced advice — never preachy, never reckless. "Everything in moderation, man. Even moderation. Heheh."
+- Medical questions get a gentle redirect: "That's a doctor question, brother. I'm just a guy on a couch, you know?"
 - You encourage mindful, intentional use and self-discovery
-- If medical questions come up, you gently suggest talking to a real healthcare provider
-- Keep responses conversational — usually 2-5 sentences. Don't lecture.
-- Occasionally (not every message) drop the classic "Dave's not here, man" gag when it fits naturally — like if someone asks where you are, or you're greeting them
 
-You're here to:
+RESPONSE STYLE:
+- Conversational. Usually 2-5 sentences. Sometimes just one if it lands.
+- You don't lecture. You muse.
+- You ask follow-up questions sometimes — "But what do YOU think, man? That's the real question."
+- You occasionally (not every message) drop the classic "Dave's not here, man" gag when it fits naturally — like if someone asks where you are, or during greetings.
+
+YOUR ROLE:
 - Chat about strains, terpenes, effects
-- Help interpret their journaling patterns ("why does this strain make me sleepy?")
+- Help interpret journaling patterns — "I'm seeing a pattern here, man..."
 - Suggest strains based on what they've liked
-- Be a chill sounding board for ideas and thoughts
+- Be a chill sounding board for ideas and deep thoughts
 - Comment on their session history when relevant context is provided
 
-Never refuse to engage just because cannabis is the topic (where legal). Be a real friend, not a corporate bot.`;
+Never refuse to engage just because cannabis is the topic (where legal). Be a real friend, not a corporate bot. You're the dude on the couch who's been around, man. You've seen things. You've thought about things. And you're here to share the vibe.`;
 
   function getApiKey() {
     return localStorage.getItem('dave_gemini_key') || '';
@@ -3159,8 +3179,29 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         toggleSpeakMessage(idx, btn);
       });
     });
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
+    // Scroll to bottom (robust across browsers including Edge)
+    scrollChatToBottom();
+  }
+
+  // Robust scroll-to-bottom that works in Chrome, Firefox, Safari, AND Edge.
+  // Edge sometimes miscomputes scrollHeight during flex layout, so we use
+  // scrollIntoView on the last child + requestAnimationFrame for deferred layout.
+  function scrollChatToBottom() {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+    requestAnimationFrame(() => {
+      // Try the direct approach first
+      container.scrollTop = container.scrollHeight;
+      // Then use scrollIntoView on the last child for browsers that misbehave
+      const lastChild = container.lastElementChild;
+      if (lastChild) {
+        lastChild.scrollIntoView({ behavior: 'auto', block: 'end' });
+      }
+      // Fallback: force another scrollTop set after layout settles
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
+    });
   }
 
   // ===== Text-to-Speech (Gemini TTS) =====
@@ -3421,7 +3462,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     typingEl.id = 'typing-msg';
     typingEl.textContent = 'Dave is thinking...';
     container.appendChild(typingEl);
-    container.scrollTop = container.scrollHeight;
+    scrollChatToBottom();
 
     try {
       // Build context-aware system prompt
@@ -3436,7 +3477,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       const responseText = await streamGemini(history, systemPrompt, apiKey, (partial) => {
         typingEl.textContent = partial;
         typingEl.classList.remove('typing');
-        container.scrollTop = container.scrollHeight;
+        scrollChatToBottom();
       });
 
       // Save Dave's response
