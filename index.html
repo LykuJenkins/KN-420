@@ -3204,6 +3204,102 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     });
   }
 
+  // Adds a "Continue" button below the last Dave message when output was truncated
+  function addContinueButton() {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+    // Remove any existing continue button first
+    const existing = document.getElementById('continue-btn-wrap');
+    if (existing) existing.remove();
+    const wrap = document.createElement('div');
+    wrap.id = 'continue-btn-wrap';
+    wrap.style.cssText = 'align-self:center;margin-top:4px;';
+    wrap.innerHTML = `<button class="btn-secondary" id="continue-btn" style="padding:8px 18px;font-size:13px;width:auto">▶ Continue Dave's thought</button>`;
+    container.appendChild(wrap);
+    document.getElementById('continue-btn').addEventListener('click', continueDaveMessage);
+    scrollChatToBottom();
+  }
+
+  // Sends a follow-up request asking Dave to finish his previous thought
+  async function continueDaveMessage() {
+    const continueBtn = document.getElementById('continue-btn');
+    if (continueBtn) {
+      continueBtn.disabled = true;
+      continueBtn.textContent = 'Continuing...';
+    }
+    daveIsTyping = true;
+    updateDaveStatus();
+
+    const container = document.getElementById('chat-messages');
+    const typingEl = document.createElement('div');
+    typingEl.className = 'msg dave typing';
+    typingEl.id = 'typing-msg';
+    typingEl.textContent = 'Dave is picking up where he left off...';
+    container.appendChild(typingEl);
+    scrollChatToBottom();
+
+    try {
+      const systemPrompt = buildContextualPrompt();
+      // Build history including an explicit "continue" instruction as the last user turn
+      const history = daveMessages.slice(-20).map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }]
+      }));
+      // Add the continue instruction
+      history.push({ role: 'user', parts: [{ text: '[Continue — pick up exactly where your previous message left off. Don\'t repeat anything, just finish the thought.]' }] });
+
+      const apiKey = getApiKey();
+      const result = await streamGemini(history, systemPrompt, apiKey, (partial) => {
+        typingEl.textContent = partial;
+        typingEl.classList.remove('typing');
+        scrollChatToBottom();
+      });
+
+      // Append the continuation to the previous Dave message (so it's one cohesive message)
+      const lastDaveMsg = [...daveMessages].reverse().find(m => m.role === 'dave');
+      if (lastDaveMsg) {
+        const updatedContent = lastDaveMsg.content + ' ' + result.text;
+        await db.daveMessages.update(lastDaveMsg.id, {
+          content: updatedContent,
+          truncated: result.truncated
+        });
+        await loadDaveMessages();
+      } else {
+        // Fallback: save as a new message
+        await db.daveMessages.add({
+          role: 'dave',
+          content: result.text,
+          truncated: result.truncated,
+          createdAt: Date.now()
+        });
+        await loadDaveMessages();
+      }
+
+      const t = document.getElementById('typing-msg');
+      if (t) t.remove();
+      // Remove the continue button (whether or not it's still truncated, we'll re-add if needed)
+      const continueWrap = document.getElementById('continue-btn-wrap');
+      if (continueWrap) continueWrap.remove();
+      renderChatMessages();
+
+      // If STILL truncated, show the continue button again
+      if (result.truncated) {
+        addContinueButton();
+      }
+    } catch (err) {
+      console.error(err);
+      const t = document.getElementById('typing-msg');
+      if (t) {
+        t.textContent = 'Dave lost his train of thought. Try again?';
+        t.classList.remove('typing');
+        t.style.color = 'var(--danger)';
+      }
+    } finally {
+      daveIsTyping = false;
+      updateDaveStatus();
+    }
+  }
+
   // ===== Text-to-Speech (Gemini TTS) =====
   const DAVE_VOICES = [
     { id: 'Charon', label: 'Charon — deep male (default)', desc: 'Chill, laid-back' },
@@ -3474,16 +3570,20 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       }));
 
       const apiKey = getApiKey();
-      const responseText = await streamGemini(history, systemPrompt, apiKey, (partial) => {
+      const result = await streamGemini(history, systemPrompt, apiKey, (partial) => {
         typingEl.textContent = partial;
         typingEl.classList.remove('typing');
         scrollChatToBottom();
       });
 
+      const responseText = result.text;
+      const wasTruncated = result.truncated;
+
       // Save Dave's response
-      const daveMsgId = await db.daveMessages.add({
+      await db.daveMessages.add({
         role: 'dave',
         content: responseText,
+        truncated: wasTruncated,
         createdAt: Date.now()
       });
       await loadDaveMessages();
@@ -3491,6 +3591,11 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       const t = document.getElementById('typing-msg');
       if (t) t.remove();
       renderChatMessages();
+
+      // If truncated, show a "Continue" button below the last message
+      if (wasTruncated) {
+        addContinueButton();
+      }
 
       // Auto-play TTS if enabled
       if (getDaveSetting('autoPlayTTS', false)) {
@@ -3567,7 +3672,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         systemInstruction: { parts: [{ text: systemPrompt }] },
         generationConfig: {
           temperature: 0.9,
-          maxOutputTokens: 800,
+          maxOutputTokens: 2048,
           topP: 0.95
         }
       })
@@ -3594,6 +3699,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     const decoder = new TextDecoder();
     let buffer = '';
     let fullText = '';
+    let finishReason = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -3608,7 +3714,12 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         if (data === '[DONE]') continue;
         try {
           const parsed = JSON.parse(data);
-          const parts = parsed.candidates && parsed.candidates[0] && parsed.candidates[0].content && parsed.candidates[0].content.parts;
+          const candidate = parsed.candidates && parsed.candidates[0];
+          // Capture finishReason so we can detect truncation
+          if (candidate && candidate.finishReason) {
+            finishReason = candidate.finishReason;
+          }
+          const parts = candidate && candidate.content && candidate.content.parts;
           if (parts && parts[0] && parts[0].text) {
             fullText += parts[0].text;
             onChunk(fullText);
@@ -3616,7 +3727,8 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         } catch (e) { /* skip non-JSON lines */ }
       }
     }
-    return fullText;
+    // Return both the text and whether it was truncated
+    return { text: fullText, truncated: finishReason === 'MAX_TOKENS' };
   }
 
   function showDaveSettings() {
