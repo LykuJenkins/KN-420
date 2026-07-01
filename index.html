@@ -2050,21 +2050,31 @@
     align-items: center;
     gap: 8px;
     margin-bottom: 10px;
+    cursor: pointer;
   }
-  .dave-chat-section-title { font-size: 14px; font-weight: 700; color: var(--green-bright); }
+  .dave-chat-section-title { font-size: 14px; font-weight: 700; color: var(--green-bright); flex: 1; }
+  .dave-chat-toggle { font-size: 12px; color: var(--text-mute); }
+  .dave-chat-section-body {
+    display: none;
+  }
+  .dave-chat-section-body.open { display: block; }
   .dave-chat-mini {
-    max-height: 280px;
+    max-height: 320px;
     overflow-y: auto;
     padding: 8px 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin-bottom: 10px;
   }
   .dave-chat-mini .msg {
     max-width: 88%;
-    padding: 8px 12px;
+    padding: 9px 13px;
     font-size: 13px;
-    line-height: 1.4;
+    line-height: 1.45;
   }
   .dave-chat-input-row {
     display: flex;
@@ -2107,6 +2117,167 @@
     border-radius: 6px;
     margin-bottom: 8px;
     font-style: italic;
+  }
+
+  /* ===== Floating Dave Popup (visible on all tabs) ===== */
+  .dave-fab {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    border: 3px solid var(--bg);
+    color: #0a0f0a;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 200;
+    box-shadow:
+      0 4px 16px rgba(74, 222, 128, 0.4),
+      0 0 0 0 rgba(74, 222, 128, 0.5);
+    display: grid;
+    place-items: center;
+    transition: transform 0.2s;
+    animation: dave-fab-pulse 3s ease-in-out infinite;
+  }
+  .dave-fab:hover { transform: scale(1.08); }
+  .dave-fab.hidden { display: none; }
+  @keyframes dave-fab-pulse {
+    0%, 100% { box-shadow: 0 4px 16px rgba(74, 222, 128, 0.4), 0 0 0 0 rgba(74, 222, 128, 0.5); }
+    50% { box-shadow: 0 4px 16px rgba(74, 222, 128, 0.4), 0 0 0 12px rgba(74, 222, 128, 0); }
+  }
+
+  .dave-popup {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    max-width: 400px;
+    height: 100%;
+    max-height: 600px;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 250;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: dave-popup-slide 0.3s ease;
+  }
+  .dave-popup.open { display: flex; }
+  @keyframes dave-popup-slide {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .dave-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .dave-popup-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4ade80, #a3e635);
+    display: grid; place-items: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .dave-popup-info { flex: 1; min-width: 0; }
+  .dave-popup-name { font-weight: 700; font-size: 14px; }
+  .dave-popup-status {
+    font-size: 11px;
+    color: var(--text-mute);
+    font-style: italic;
+  }
+  .dave-popup-status.online { color: var(--green-bright); font-style: normal; }
+  .dave-popup-close {
+    width: 32px; height: 32px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .dave-popup-close:hover { color: var(--text); }
+
+  .dave-popup-messages {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .dave-popup-messages .msg {
+    max-width: 85%;
+    padding: 9px 13px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .dave-popup-input-row {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px calc(env(safe-area-inset-bottom) + 12px);
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .dave-popup-input-row input {
+    flex: 1;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 15px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .dave-popup-input-row input:focus { outline: none; border-color: var(--green); }
+  .dave-popup-send {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    border: none;
+    color: #0a0f0a;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Dave popup setup screen (when no API key) */
+  .dave-popup-setup {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px 24px;
+    text-align: center;
+  }
+  .dave-popup-setup .setup-door {
+    font-size: 44px;
+    margin-bottom: 12px;
+  }
+
+  @media (min-width: 500px) {
+    .dave-popup {
+      bottom: 90px;
+      right: 20px;
+      border-radius: 16px;
+      height: 560px;
+      max-height: calc(100vh - 120px);
+    }
+    @keyframes dave-popup-slide {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
   }
 
   /* Strain autocomplete + lookup */
@@ -2475,10 +2646,7 @@
     <div id="library-list"></div>
   </section>
 
-  <!-- DAVE VIEW -->
-  <section class="view" id="view-dave">
-    <div id="dave-content"></div>
-  </section>
+  <!-- DAVE VIEW (removed — now a floating popup) -->
 
   <!-- VAULT VIEW -->
   <section class="view" id="view-vault">
@@ -2529,11 +2697,13 @@
     <span class="nav-icon">✨</span>
     <span>Insights</span>
   </button>
-  <button class="nav-btn" data-view="dave">
-    <span class="nav-icon">🚪</span>
-    <span>Dave</span>
-  </button>
 </nav>
+
+<!-- Floating Dave Popup (visible on all tabs) -->
+<button class="dave-fab" id="dave-fab" aria-label="Chat with Dave">🚪</button>
+<div class="dave-popup" id="dave-popup">
+  <div id="dave-popup-content"></div>
+</div>
 
 <!-- Session Detail Modal -->
 <div class="modal-backdrop" id="modal-backdrop">
@@ -3181,8 +3351,40 @@
     setupVault();
     setupWizard();
     setupRabbitHole();
+    setupDaveFab();
     loadDaveMessages();
     loadCustomStrains().then(() => refreshAll());
+  }
+
+  // ===== Dave Floating Popup =====
+  function setupDaveFab() {
+    const fab = document.getElementById('dave-fab');
+    const popup = document.getElementById('dave-popup');
+    if (!fab || !popup) return;
+    fab.addEventListener('click', () => {
+      if (popup.classList.contains('open')) {
+        closeDavePopup();
+      } else {
+        openDavePopup();
+      }
+    });
+  }
+
+  function openDavePopup() {
+    const popup = document.getElementById('dave-popup');
+    const fab = document.getElementById('dave-fab');
+    if (!popup || !fab) return;
+    popup.classList.add('open');
+    fab.classList.add('hidden');
+    renderDaveView();
+  }
+
+  function closeDavePopup() {
+    const popup = document.getElementById('dave-popup');
+    const fab = document.getElementById('dave-fab');
+    if (!popup || !fab) return;
+    popup.classList.remove('open');
+    fab.classList.remove('hidden');
   }
 
   function setDefaultDatetime() {
@@ -3238,12 +3440,12 @@
   function switchView(view) {
     currentView = view;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById('view-' + view).classList.add('active');
+    const viewEl = document.getElementById('view-' + view);
+    if (viewEl) viewEl.classList.add('active');
     document.querySelectorAll('.nav-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.view === view);
     });
     window.scrollTo(0, 0);
-    if (view === 'dave') renderDaveView();
     if (view === 'vault') renderVault();
   }
 
@@ -4013,6 +4215,7 @@
       else if (action === 'add-waypoint') addVaultWaypoint(sessionId);
       else if (action === 'remove-waypoint') removeVaultWaypoint(sessionId, parseInt(btn.dataset.idx));
       else if (action === 'dave-send') sendVaultDaveMessage(sessionId);
+      else if (action === 'toggle-dave-chat') toggleVaultDaveChat(sessionId);
     };
 
     // Event delegation for waypoint input changes
@@ -4226,17 +4429,20 @@
     const daveChatCount = (s.daveChat || []).length;
     const daveChatHtml = `
       <div class="dave-chat-section">
-        <div class="dave-chat-section-header">
+        <div class="dave-chat-section-header" data-action="toggle-dave-chat" data-session-id="${s.id}">
           <span style="font-size:18px">🚪</span>
           <span class="dave-chat-section-title">Dave Chat</span>
-          ${daveChatCount > 0 ? `<span style="font-size:10px;color:var(--text-mute);margin-left:auto">${daveChatCount} message${daveChatCount === 1 ? '' : 's'}</span>` : ''}
+          ${daveChatCount > 0 ? `<span style="font-size:10px;color:var(--text-mute)">${daveChatCount} message${daveChatCount === 1 ? '' : 's'}</span>` : ''}
+          <span class="dave-chat-toggle" id="dave-chat-toggle-${s.id}">${daveChatCount > 0 ? '▼' : '▶'}</span>
         </div>
-        <div id="vault-dave-chat-${s.id}">
-          ${renderVaultDaveChat(s)}
-        </div>
-        <div class="dave-chat-input-row">
-          <input type="text" id="vault-dave-input-${s.id}" placeholder="Chat with Dave about this..." autocomplete="off">
-          <button class="dave-chat-send" data-action="dave-send" data-session-id="${s.id}">➤</button>
+        <div class="dave-chat-section-body ${daveChatCount > 0 ? 'open' : ''}" id="dave-chat-body-${s.id}">
+          <div id="vault-dave-chat-${s.id}" class="dave-chat-mini">
+            ${renderVaultDaveChat(s)}
+          </div>
+          <div class="dave-chat-input-row">
+            <input type="text" id="vault-dave-input-${s.id}" placeholder="Chat with Dave about this..." autocomplete="off">
+            <button class="dave-chat-send" data-action="dave-send" data-session-id="${s.id}">➤</button>
+          </div>
         </div>
       </div>
     `;
@@ -4660,6 +4866,14 @@
     }
   }
 
+  function toggleVaultDaveChat(sessionId) {
+    const body = document.getElementById('dave-chat-body-' + sessionId);
+    const toggle = document.getElementById('dave-chat-toggle-' + sessionId);
+    if (!body) return;
+    const isOpen = body.classList.toggle('open');
+    if (toggle) toggle.textContent = isOpen ? '▼' : '▶';
+  }
+
   // ===== Library View =====
   function setupLibrary() {
     document.getElementById('library-search').addEventListener('input', renderLibrary);
@@ -4866,7 +5080,8 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
   }
 
   function renderDaveView() {
-    const content = document.getElementById('dave-content');
+    const content = document.getElementById('dave-popup-content');
+    if (!content) return;
     const apiKey = getApiKey();
 
     if (!apiKey) {
@@ -4874,31 +5089,41 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       return;
     }
 
-    // Chat interface
+    // Chat interface (popup version)
     content.innerHTML = `
-      <div class="chat-header">
-        <div class="chat-avatar">🧔</div>
-        <div>
-          <div class="chat-name">Dave</div>
-          <div class="chat-status ${daveIsTyping ? 'online' : ''}" id="dave-status">${daveIsTyping ? 'typing...' : 'Dave\'s not here, man'}</div>
+      <div class="dave-popup-header">
+        <div class="dave-popup-avatar">🧔</div>
+        <div class="dave-popup-info">
+          <div class="dave-popup-name">Dave</div>
+          <div class="dave-popup-status ${daveIsTyping ? 'online' : ''}" id="dave-status">${daveIsTyping ? 'typing...' : 'Dave\'s not here, man'}</div>
         </div>
-        <button class="chat-settings-btn" id="chat-settings-btn" title="Settings">⚙️</button>
+        <button class="dave-popup-close" id="chat-settings-btn" title="Settings">⚙️</button>
+        <button class="dave-popup-close" id="dave-popup-close-btn" title="Close">✕</button>
       </div>
-      <div class="chat-messages" id="chat-messages"></div>
-      <div class="chat-input-row">
+      <div class="dave-popup-messages" id="chat-messages"></div>
+      <div class="dave-popup-input-row">
         <input type="text" id="chat-input" placeholder="Say something to Dave..." autocomplete="off">
-        <button class="chat-send-btn" id="chat-send-btn" aria-label="Send">➤</button>
+        <button class="dave-popup-send" id="chat-send-btn" aria-label="Send">➤</button>
       </div>
     `;
 
     renderChatMessages();
     setupChatInput();
     document.getElementById('chat-settings-btn').addEventListener('click', showDaveSettings);
+    document.getElementById('dave-popup-close-btn').addEventListener('click', closeDavePopup);
   }
 
   function renderApiKeySetup(content) {
     content.innerHTML = `
-      <div class="api-key-setup">
+      <div class="dave-popup-header">
+        <div class="dave-popup-avatar">🚪</div>
+        <div class="dave-popup-info">
+          <div class="dave-popup-name">Dave</div>
+          <div class="dave-popup-status">not connected</div>
+        </div>
+        <button class="dave-popup-close" id="dave-popup-close-btn" title="Close">✕</button>
+      </div>
+      <div class="dave-popup-setup">
         <div class="setup-door">🚪</div>
         <div class="setup-title">Dave's not here... yet</div>
         <div class="setup-sub">To chat with Dave, you'll need a free Google Gemini API key. It takes about 30 seconds to get one.</div>
@@ -4915,6 +5140,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         <div class="setup-privacy">🔒 Your API key is stored only on this device and sent only to Google's Gemini API. It never touches any other server. Clearing your browser data removes it.</div>
       </div>
     `;
+    document.getElementById('dave-popup-close-btn').addEventListener('click', closeDavePopup);
     document.getElementById('setup-connect-btn').addEventListener('click', async () => {
       const key = document.getElementById('api-key-input').value.trim();
       const err = document.getElementById('setup-error');
