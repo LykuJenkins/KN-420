@@ -1292,6 +1292,76 @@
   }
   .toggle.on::after { left: 22px; }
 
+  /* Dave TTS (text-to-speech) */
+  .msg.dave {
+    position: relative;
+    padding-right: 36px;
+  }
+  .speak-btn {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    width: 26px;
+    height: 26px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--text-mute);
+    cursor: pointer;
+    font-size: 12px;
+    display: grid;
+    place-items: center;
+    transition: all 0.15s;
+    opacity: 0.6;
+  }
+  .msg.dave:hover .speak-btn { opacity: 1; }
+  .speak-btn:hover {
+    color: var(--green-bright);
+    border-color: var(--green);
+    opacity: 1;
+  }
+  .speak-btn.loading {
+    animation: spin 0.8s linear infinite;
+    pointer-events: none;
+    opacity: 1;
+    color: var(--amber);
+    border-color: var(--amber);
+  }
+  .speak-btn.playing {
+    background: var(--green);
+    color: #0a0f0a;
+    border-color: var(--green);
+    opacity: 1;
+    animation: pulse-green 1s ease-in-out infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); }
+    50% { box-shadow: 0 0 0 4px rgba(74, 222, 128, 0); }
+  }
+
+  /* Voice selector */
+  .voice-select {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .voice-select:focus { outline: none; border-color: var(--green); }
+
+  /* "Dave is speaking" header indicator */
+  .chat-status.speaking {
+    color: var(--green-bright) !important;
+    font-style: normal !important;
+  }
+  .chat-status.speaking::before {
+    content: '🔊 ';
+  }
+
   /* Strain autocomplete + lookup */
   .strain-input-wrap { position: relative; }
   .strain-actions { display: flex; gap: 8px; align-items: stretch; }
@@ -3072,12 +3142,243 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       container.innerHTML = '<div class="msg-context">Say hi to Dave 👋</div>';
       return;
     }
-    container.innerHTML = daveMessages.map(m => {
-      const cls = m.role === 'user' ? 'user' : 'dave';
-      return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+    container.innerHTML = daveMessages.map((m, idx) => {
+      if (m.role === 'user') {
+        return `<div class="msg user">${escapeHtml(m.content)}</div>`;
+      }
+      // Dave message — add speak button
+      const btnId = `speak-${m.id || idx}`;
+      return `<div class="msg dave" data-msg-idx="${idx}">${escapeHtml(m.content)}
+        <button class="speak-btn" data-msg-idx="${idx}" id="${btnId}" title="Read aloud">🔊</button>
+      </div>`;
     }).join('');
+    // Wire up speak buttons
+    container.querySelectorAll('.speak-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.msgIdx);
+        toggleSpeakMessage(idx, btn);
+      });
+    });
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;
+  }
+
+  // ===== Text-to-Speech (Gemini TTS) =====
+  const DAVE_VOICES = [
+    { id: 'Charon', label: 'Charon — deep male (default)', desc: 'Chill, laid-back' },
+    { id: 'Puck',   label: 'Puck — cheerful male',         desc: 'Upbeat, friendly' },
+    { id: 'Zephyr', label: 'Zephyr — higher male',         desc: 'Lighter, brighter' },
+    { id: 'Fenrir', label: 'Fenrir — gritty male',         desc: 'Raspy, character' },
+    { id: 'Aoede',  label: 'Aoede — female',               desc: 'Soft, warm' },
+    { id: 'Kore',   label: 'Kore — female',                desc: 'Bright, energetic' },
+    { id: 'Leda',   label: 'Leda — youthful',              desc: 'Young, neutral' }
+  ];
+
+  // In-memory audio cache: message index → { blobUrl, audioEl }
+  const daveAudioCache = new Map();
+  let currentlyPlayingBtn = null;
+  let currentlyPlayingAudio = null;
+
+  function getDaveVoice() {
+    return localStorage.getItem('dave_voice') || 'Charon';
+  }
+
+  async function toggleSpeakMessage(idx, btn) {
+    // If this button is currently playing, stop
+    if (btn.classList.contains('playing')) {
+      stopAllAudio();
+      return;
+    }
+    // Stop anything else currently playing
+    stopAllAudio();
+
+    const msg = daveMessages[idx];
+    if (!msg) return;
+
+    // Check cache
+    const cached = daveAudioCache.get(idx);
+    if (cached) {
+      playAudio(cached.audioEl, btn);
+      return;
+    }
+
+    // Generate audio
+    btn.classList.add('loading');
+    btn.textContent = '⏳';
+    try {
+      const audioEl = await generateDaveSpeech(msg.content);
+      // Cache it
+      daveAudioCache.set(idx, { audioEl });
+      btn.classList.remove('loading');
+      btn.textContent = '🔊';
+      playAudio(audioEl, btn);
+    } catch (err) {
+      console.error(err);
+      btn.classList.remove('loading');
+      btn.textContent = '🔊';
+      let msg = 'Could not generate audio';
+      if (err.message && err.message.toLowerCase().includes('api key')) {
+        msg = 'API key issue — check settings';
+      } else if (err.message && err.message.toLowerCase().includes('not found')) {
+        msg = 'TTS model not available for this key';
+      }
+      showToast(msg, 3500);
+    }
+  }
+
+  function playAudio(audioEl, btn) {
+    stopAllAudio();
+    currentlyPlayingBtn = btn;
+    currentlyPlayingAudio = audioEl;
+    btn.classList.add('playing');
+    btn.textContent = '⏸';
+    const status = document.getElementById('dave-status');
+    if (status) {
+      status.textContent = 'speaking...';
+      status.classList.add('speaking');
+    }
+    audioEl.onended = () => {
+      btn.classList.remove('playing');
+      btn.textContent = '🔊';
+      currentlyPlayingBtn = null;
+      currentlyPlayingAudio = null;
+      updateDaveStatus();
+    };
+    audioEl.play().catch(err => {
+      console.error('Audio play failed:', err);
+      btn.classList.remove('playing');
+      btn.textContent = '🔊';
+      currentlyPlayingBtn = null;
+      currentlyPlayingAudio = null;
+      updateDaveStatus();
+      showToast('Could not play audio', 3000);
+    });
+  }
+
+  function stopAllAudio() {
+    if (currentlyPlayingAudio) {
+      currentlyPlayingAudio.pause();
+      currentlyPlayingAudio.currentTime = 0;
+      currentlyPlayingAudio = null;
+    }
+    if (currentlyPlayingBtn) {
+      currentlyPlayingBtn.classList.remove('playing');
+      currentlyPlayingBtn.textContent = '🔊';
+      currentlyPlayingBtn = null;
+    }
+    const status = document.getElementById('dave-status');
+    if (status) status.classList.remove('speaking');
+    updateDaveStatus();
+  }
+
+  async function generateDaveSpeech(text) {
+    const apiKey = getApiKey();
+    if (!apiKey) throw new Error('No API key');
+
+    // Strip markdown-ish characters that don't speak well
+    const cleanText = text
+      .replace(/^\*+|\*+$/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/^>\s+/gm, '')
+      .trim();
+
+    const voice = getDaveVoice();
+    const resp = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-goog-api-key': apiKey
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: cleanText }] }],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: voice }
+              }
+            }
+          }
+        })
+      }
+    );
+
+    if (!resp.ok) {
+      const errBody = await resp.text();
+      let msg = 'TTS request failed';
+      try {
+        const parsed = JSON.parse(errBody);
+        if (parsed.error && parsed.error.message) {
+          msg = parsed.error.message;
+          if (resp.status === 404) msg = 'TTS model not found — your key may not have access to preview models';
+        }
+      } catch (e) {}
+      throw new Error(msg);
+    }
+
+    const data = await resp.json();
+    const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+    if (!parts || !parts[0] || !parts[0].inlineData || !parts[0].inlineData.data) {
+      throw new Error('No audio in response');
+    }
+
+    const base64Audio = parts[0].inlineData.data;
+    const mimeType = parts[0].inlineData.mimeType || 'audio/L16;rate=24000';
+
+    // Parse sample rate from mimeType
+    const rateMatch = mimeType.match(/rate=(\d+)/);
+    const sampleRate = rateMatch ? parseInt(rateMatch[1]) : 24000;
+
+    // Convert base64 PCM → WAV Blob
+    const pcmBytes = base64ToBytes(base64Audio);
+    const wavBlob = pcmToWav(pcmBytes, sampleRate, 1, 16);
+    const url = URL.createObjectURL(wavBlob);
+    const audio = new Audio(url);
+    return audio;
+  }
+
+  function base64ToBytes(base64) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  // Wrap raw 16-bit PCM in a WAV container so <audio> can play it
+  function pcmToWav(pcmBytes, sampleRate, numChannels, bitsPerSample) {
+    const bytesPerSample = bitsPerSample / 8;
+    const blockAlign = numChannels * bytesPerSample;
+    const byteRate = sampleRate * blockAlign;
+    const dataSize = pcmBytes.length;
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+
+    // RIFF header
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeString(view, 8, 'WAVE');
+    // fmt chunk
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);                    // fmt chunk size
+    view.setUint16(20, 1, true);                     // audio format = PCM
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+    // data chunk
+    writeString(view, 36, 'data');
+    view.setUint32(40, dataSize, true);
+    // PCM data
+    new Uint8Array(buffer, 44).set(pcmBytes);
+
+    return new Blob([buffer], { type: 'audio/wav' });
+  }
+
+  function writeString(view, offset, str) {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
   }
 
   function setupChatInput() {
@@ -3139,7 +3440,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       });
 
       // Save Dave's response
-      await db.daveMessages.add({
+      const daveMsgId = await db.daveMessages.add({
         role: 'dave',
         content: responseText,
         createdAt: Date.now()
@@ -3149,6 +3450,18 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       const t = document.getElementById('typing-msg');
       if (t) t.remove();
       renderChatMessages();
+
+      // Auto-play TTS if enabled
+      if (getDaveSetting('autoPlayTTS', false)) {
+        // Find the just-rendered Dave message button and trigger it
+        const btns = document.querySelectorAll('.speak-btn');
+        const lastBtn = btns[btns.length - 1];
+        if (lastBtn) {
+          const idx = parseInt(lastBtn.dataset.msgIdx);
+          // Small delay so the UI settles
+          setTimeout(() => toggleSpeakMessage(idx, lastBtn), 200);
+        }
+      }
     } catch (err) {
       console.error(err);
       const t = document.getElementById('typing-msg');
@@ -3268,10 +3581,30 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
   function showDaveSettings() {
     const content = document.getElementById('modal-content');
     const shareSessions = getDaveSetting('shareSessions', true);
+    const autoPlay = getDaveSetting('autoPlayTTS', false);
+    const currentVoice = getDaveVoice();
     content.innerHTML = `
       <div class="modal-header">
         <div class="modal-title">Dave Settings</div>
         <button class="modal-close" id="modal-close-btn">✕</button>
+      </div>
+
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">Dave's voice</div>
+          <div class="dave-settings-desc">Choose the voice Dave uses when reading messages aloud. Charon (deep male) fits the chill stoner vibe best.</div>
+        </div>
+        <select class="voice-select" id="voice-select">
+          ${DAVE_VOICES.map(v => `<option value="${v.id}" ${v.id === currentVoice ? 'selected' : ''}>${escapeHtml(v.label)}</option>`).join('')}
+        </select>
+      </div>
+
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">Read Dave's replies aloud automatically</div>
+          <div class="dave-settings-desc">Dave will speak each response as soon as it finishes streaming. Uses extra API calls — off by default.</div>
+        </div>
+        <div class="toggle ${autoPlay ? 'on' : ''}" id="toggle-autoplay"></div>
       </div>
 
       <div class="dave-settings-row">
@@ -3299,12 +3632,26 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       </div>
 
       <div style="font-size:11px;color:var(--text-mute);margin-top:20px;line-height:1.5">
-        Powered by Google Gemini (gemini-flash-latest). Your API key and messages are stored locally and sent only to Google.
+        Chat: Google Gemini (gemini-flash-latest). Voice: Gemini 2.5 Flash TTS (preview). Your API key and messages are stored locally and sent only to Google.
       </div>
     `;
 
     document.getElementById('modal-backdrop').classList.add('open');
     document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+
+    document.getElementById('voice-select').addEventListener('change', (e) => {
+      localStorage.setItem('dave_voice', e.target.value);
+      // Clear audio cache since voice changed
+      daveAudioCache.clear();
+      showToast('Voice set to ' + e.target.value);
+    });
+
+    document.getElementById('toggle-autoplay').addEventListener('click', (e) => {
+      const newVal = !autoPlay;
+      setDaveSetting('autoPlayTTS', newVal);
+      e.target.classList.toggle('on', newVal);
+      showToast(newVal ? 'Auto-read aloud ON' : 'Auto-read aloud OFF');
+    });
 
     document.getElementById('toggle-share-sessions').addEventListener('click', () => {
       const newVal = !shareSessions;
@@ -3316,6 +3663,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     document.getElementById('clear-chat-btn').addEventListener('click', async () => {
       if (confirm('Clear all messages with Dave? This cannot be undone.')) {
         await db.daveMessages.clear();
+        daveAudioCache.clear();
         await loadDaveMessages();
         closeModal();
         renderDaveView();
@@ -3326,6 +3674,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     document.getElementById('disconnect-btn').addEventListener('click', () => {
       if (confirm('Disconnect Dave? Your API key will be removed from this device.')) {
         clearApiKey();
+        daveAudioCache.clear();
         closeModal();
         renderDaveView();
         showToast('Dave disconnected');
