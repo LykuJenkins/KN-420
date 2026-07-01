@@ -425,17 +425,25 @@
     background: none;
     border: none;
     color: var(--text-mute);
-    padding: 12px 0 14px;
+    padding: 10px 2px 12px;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    font-size: 11px;
+    gap: 2px;
+    font-size: 10px;
     font-weight: 500;
     transition: color 0.15s;
+    min-width: 0;
+    overflow: hidden;
   }
-  .nav-icon { font-size: 20px; line-height: 1; }
+  .nav-btn span:last-child {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .nav-icon { font-size: 18px; line-height: 1; }
   .nav-btn.active { color: var(--green); }
   .nav-btn:active { transform: scale(0.97); }
 
@@ -1365,6 +1373,152 @@
     content: '🔊 ';
   }
 
+  /* ===== The High Dia Vault ===== */
+  .vault-filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .vault-filter-row .chip {
+    padding: 7px 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-dim);
+    transition: all 0.15s;
+  }
+  .vault-filter-row .chip:hover { color: var(--text); border-color: var(--border-strong); }
+  .vault-filter-row .chip.active {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: var(--green);
+    color: var(--green-bright);
+  }
+
+  .vault-entry {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .vault-entry-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .vault-entry-header:hover { background: rgba(255,255,255,0.02); }
+  .vault-entry-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .vault-entry-strain { font-weight: 700; font-size: 15px; }
+  .vault-entry-date { font-size: 11px; color: var(--text-mute); flex-shrink: 0; }
+  .vault-entry-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    font-size: 11px;
+    color: var(--text-mute);
+  }
+  .vault-entry-meta .tag { font-size: 10px; padding: 2px 7px; }
+  .vault-entry-mood { display: inline-flex; align-items: center; gap: 4px; }
+
+  .vault-entry-body { padding: 14px 16px; }
+  .vault-section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-mute);
+    margin-bottom: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .vault-section-label .icon { font-size: 12px; }
+
+  .vault-note {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    position: relative;
+  }
+  .vault-note-editing {
+    background: var(--bg-elev);
+    border: 1px solid var(--green);
+    border-radius: var(--radius-sm);
+    padding: 0;
+    overflow: hidden;
+  }
+  .vault-note-editing textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.55;
+    min-height: 100px;
+    resize: vertical;
+  }
+  .vault-note-editing textarea:focus { outline: none; }
+  .vault-note-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .vault-action-btn {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 5px 11px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .vault-action-btn:hover { color: var(--text); border-color: var(--border-strong); }
+  .vault-action-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
+  .vault-action-btn.primary:hover { color: var(--green-bright); border-color: var(--green); }
+  .vault-action-btn.save { background: var(--green); color: #0a0f0a; border-color: var(--green); }
+  .vault-action-btn.save:hover { background: var(--green-bright); }
+
+  .vault-audio {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .vault-audio audio { width: 100%; margin-top: 4px; }
+  .vault-audio-meta {
+    font-size: 11px;
+    color: var(--text-mute);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
   /* Strain autocomplete + lookup */
   .strain-input-wrap { position: relative; }
   .strain-actions { display: flex; gap: 8px; align-items: stretch; }
@@ -1637,6 +1791,20 @@
   <section class="view" id="view-dave">
     <div id="dave-content"></div>
   </section>
+
+  <!-- VAULT VIEW -->
+  <section class="view" id="view-vault">
+    <h1 class="view-title">The High Dia Vault</h1>
+    <p class="view-sub" id="vault-count">Your audio recordings & idea notes</p>
+
+    <div class="vault-filter-row">
+      <div class="chip active" data-vault-filter="all">All</div>
+      <div class="chip" data-vault-filter="notes">📝 Notes</div>
+      <div class="chip" data-vault-filter="audio">🎙️ Audio</div>
+    </div>
+
+    <div id="vault-list"></div>
+  </section>
 </main>
 
 <!-- Bottom Nav -->
@@ -1648,6 +1816,10 @@
   <button class="nav-btn" data-view="history">
     <span class="nav-icon">📖</span>
     <span>History</span>
+  </button>
+  <button class="nav-btn" data-view="vault">
+    <span class="nav-icon">🗄️</span>
+    <span>Vault</span>
   </button>
   <button class="nav-btn" data-view="library">
     <span class="nav-icon">📚</span>
@@ -1860,6 +2032,7 @@
   let currentInsightSubtab = 'overview';
   let daveMessages = [];
   let daveIsTyping = false;
+  let currentVaultFilter = 'all';
 
   // ===== PWA Manifest (built at runtime so file stays single-file) =====
   const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -2301,6 +2474,7 @@
     setupInstallPrompt();
     setupLibrary();
     setupInsightSubtabs();
+    setupVault();
     loadDaveMessages();
     loadCustomStrains().then(() => refreshAll());
   }
@@ -2364,6 +2538,7 @@
     });
     window.scrollTo(0, 0);
     if (view === 'dave') renderDaveView();
+    if (view === 'vault') renderVault();
   }
 
   function setupForm() {
@@ -2642,6 +2817,7 @@
     renderInsights();
     updateStrainFilter();
     renderLibrary();
+    renderVault();
   }
 
   function updateStrainFilter() {
@@ -2831,6 +3007,223 @@
   document.getElementById('modal-backdrop').addEventListener('click', (e) => {
     if (e.target.id === 'modal-backdrop') closeModal();
   });
+
+  // ===== The High Dia Vault =====
+  function setupVault() {
+    document.querySelectorAll('.vault-filter-row .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.vault-filter-row .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentVaultFilter = chip.dataset.vaultFilter;
+        renderVault();
+      });
+    });
+  }
+
+  function renderVault() {
+    const list = document.getElementById('vault-list');
+    if (!list) return;
+
+    // Filter sessions that have notes OR audio
+    let entries = allSessions.filter(s =>
+      (s.notes && s.notes.trim()) || s.audio
+    );
+
+    // Apply filter
+    if (currentVaultFilter === 'notes') {
+      entries = entries.filter(s => s.notes && s.notes.trim());
+    } else if (currentVaultFilter === 'audio') {
+      entries = entries.filter(s => s.audio);
+    }
+
+    // Update count
+    const notesCount = allSessions.filter(s => s.notes && s.notes.trim()).length;
+    const audioCount = allSessions.filter(s => s.audio).length;
+    document.getElementById('vault-count').textContent =
+      `${notesCount} note${notesCount === 1 ? '' : 's'} · ${audioCount} audio recording${audioCount === 1 ? '' : 's'}`;
+
+    if (entries.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🗄️</div>
+          <div class="empty-state-text">${currentVaultFilter === 'audio' ? 'No audio recordings yet. Record a voice note on the Log tab.' : currentVaultFilter === 'notes' ? 'No idea notes yet. Write something on the Log tab.' : 'Nothing in the vault yet. Log a session with notes or audio to fill it up.'}</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = entries.map(s => renderVaultEntry(s)).join('');
+
+    // Wire up note action buttons
+    list.querySelectorAll('.vault-action-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        const sessionId = parseInt(btn.dataset.sessionId);
+        if (action === 'edit') startEditVaultNote(sessionId);
+        else if (action === 'save') saveVaultNote(sessionId);
+        else if (action === 'cancel') cancelEditVaultNote(sessionId);
+        else if (action === 'delete') deleteVaultNote(sessionId);
+        else if (action === 'copy') copyVaultNote(sessionId);
+      });
+    });
+
+    // Wire up header clicks to open the session detail
+    list.querySelectorAll('.vault-entry-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const sessionId = parseInt(header.dataset.sessionId);
+        showSessionDetail(sessionId);
+      });
+    });
+
+    // Revoke old audio object URLs when re-rendering
+    list.querySelectorAll('audio').forEach(audio => {
+      // URL will be cleaned up when modal closes or page re-renders
+    });
+  }
+
+  function renderVaultEntry(s) {
+    const dt = new Date(s.datetime);
+    const dateStr = dt.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) +
+      ' ' + dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+    const typeBadge = s.type ? `<span class="session-type-badge ${TYPE_BADGES[s.type] || 'badge-other'}">${escapeHtml(s.type)}</span>` : '';
+    const moodStr = (s.moodBefore || s.moodAfter) ?
+      `<span class="vault-entry-mood">${s.moodBefore ? MOOD_EMOJI[s.moodBefore] : '—'} → ${s.moodAfter ? MOOD_EMOJI[s.moodAfter] : '—'}</span>` : '';
+    const tags = (s.terpenes || []).slice(0, 2).map(t => renderTerpeneTag(t)).join('') +
+                (s.effects || []).slice(0, 2).map(e => `<span class="tag">${escapeHtml(e)}</span>`).join('');
+
+    let audioHtml = '';
+    if (s.audio) {
+      const url = URL.createObjectURL(s.audio);
+      audioHtml = `
+        <div class="vault-section-label"><span class="icon">🎙️</span> Voice Note</div>
+        <div class="vault-audio">
+          <div class="vault-audio-meta">
+            <span>${formatTime(s.audioDuration || 0)} duration</span>
+          </div>
+          <audio controls src="${url}"></audio>
+        </div>
+      `;
+    }
+
+    let noteHtml = '';
+    if (s.notes && s.notes.trim()) {
+      noteHtml = `
+        <div class="vault-section-label"><span class="icon">💡</span> Ideas & Notes</div>
+        <div class="vault-note" id="vault-note-${s.id}">${escapeHtml(s.notes)}</div>
+        <div class="vault-note-actions" id="vault-note-actions-${s.id}">
+          <button class="vault-action-btn primary" data-action="edit" data-session-id="${s.id}">✏️ Edit</button>
+          <button class="vault-action-btn" data-action="copy" data-session-id="${s.id}">📋 Copy</button>
+          <button class="vault-action-btn danger" data-action="delete" data-session-id="${s.id}">🗑 Delete</button>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="vault-entry" data-session-id="${s.id}">
+        <div class="vault-entry-header" data-session-id="${s.id}">
+          <div class="vault-entry-header-top">
+            <div class="vault-entry-strain">${escapeHtml(s.strain || 'Untitled session')}</div>
+            <div class="vault-entry-date">${dateStr}</div>
+          </div>
+          <div class="vault-entry-meta">
+            ${typeBadge}
+            ${moodStr}
+            ${tags}
+          </div>
+        </div>
+        <div class="vault-entry-body">
+          ${audioHtml}
+          ${noteHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  function startEditVaultNote(sessionId) {
+    const noteEl = document.getElementById('vault-note-' + sessionId);
+    const actionsEl = document.getElementById('vault-note-actions-' + sessionId);
+    if (!noteEl) return;
+    const session = allSessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    noteEl.outerHTML = `<div class="vault-note-editing" id="vault-note-${sessionId}">
+      <textarea id="vault-note-textarea-${sessionId}" placeholder="Edit your notes...">${escapeHtml(session.notes || '')}</textarea>
+    </div>`;
+    actionsEl.innerHTML = `
+      <button class="vault-action-btn save" data-action="save" data-session-id="${sessionId}">💾 Save</button>
+      <button class="vault-action-btn" data-action="cancel" data-session-id="${sessionId}">✕ Cancel</button>
+    `;
+    // Re-wire the new buttons
+    actionsEl.querySelectorAll('.vault-action-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        if (action === 'save') saveVaultNote(sessionId);
+        else if (action === 'cancel') cancelEditVaultNote(sessionId);
+      });
+    });
+    // Focus the textarea
+    const ta = document.getElementById('vault-note-textarea-' + sessionId);
+    if (ta) {
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    }
+  }
+
+  async function saveVaultNote(sessionId) {
+    const ta = document.getElementById('vault-note-textarea-' + sessionId);
+    if (!ta) return;
+    const newText = ta.value.trim();
+    try {
+      await db.sessions.update(sessionId, { notes: newText });
+      await refreshAll();
+      showToast('Note saved');
+    } catch (err) {
+      console.error(err);
+      showToast('Could not save note');
+    }
+  }
+
+  function cancelEditVaultNote(sessionId) {
+    renderVault();
+  }
+
+  async function deleteVaultNote(sessionId) {
+    const session = allSessions.find(s => s.id === sessionId);
+    if (!session) return;
+    if (!confirm('Delete this note? The session itself will be kept.')) return;
+    try {
+      await db.sessions.update(sessionId, { notes: '' });
+      await refreshAll();
+      showToast('Note deleted');
+    } catch (err) {
+      console.error(err);
+      showToast('Could not delete note');
+    }
+  }
+
+  async function copyVaultNote(sessionId) {
+    const session = allSessions.find(s => s.id === sessionId);
+    if (!session || !session.notes) return;
+    try {
+      await navigator.clipboard.writeText(session.notes);
+      showToast('Copied to clipboard 📋');
+    } catch (err) {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = session.notes;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Copied to clipboard 📋');
+      } catch (e) {
+        showToast('Could not copy — try manually selecting');
+      }
+      document.body.removeChild(ta);
+    }
+  }
 
   // ===== Library View =====
   function setupLibrary() {
