@@ -2175,6 +2175,7 @@
     overflow: hidden;
     animation: dave-popup-slide 0.3s ease;
     overscroll-behavior: contain;
+    touch-action: none;
   }
   .dave-popup.open { display: flex; }
   @keyframes dave-popup-slide {
@@ -3344,6 +3345,11 @@
     if (!popup || !fab) return;
     popup.classList.add('open');
     fab.classList.add('hidden');
+    // Lock body scroll so the page doesn't scroll behind the popup
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.top = '0';
     renderDaveView();
   }
 
@@ -3353,6 +3359,11 @@
     if (!popup || !fab) return;
     popup.classList.remove('open');
     fab.classList.remove('hidden');
+    // Restore body scroll
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.top = '';
   }
 
   function setDefaultDatetime() {
