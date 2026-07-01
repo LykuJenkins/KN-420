@@ -1,0 +1,45 @@
+{
+  "packageId": "com.stonerbook.app",
+  "host": "lykujenkins.github.io",
+  "name": "The Stoner Book",
+  "launcherName": "Stoner Book",
+  "display": "standalone",
+  "orientation": "default",
+  "themeColor": "#0f1410",
+  "themeColorDark": "#0a0f0a",
+  "navigationColor": "#0f1410",
+  "navigationColorDark": "#0a0f0a",
+  "navigationDividerColor": "#0f1410",
+  "navigationDividerColorDark": "#0a0f0a",
+  "backgroundColor": "#0a0f0a",
+  "enableNotifications": true,
+  "startUrl": "/KN-420/",
+  "iconUrl": "https://lykujenkins.github.io/KN-420/icons/icon-512.png",
+  "maskableIconUrl": "https://lykujenkins.github.io/KN-420/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    { "name": "Log Session", "shortName": "Log", "url": "/KN-420/?view=log" },
+    { "name": "Vault", "shortName": "Vault", "url": "/KN-420/?view=vault" },
+    { "name": "Dave", "shortName": "Dave", "url": "/KN-420/?open=dave" }
+  ],
+  "generatorApp": "bubblewrap",
+  "webManifestUrl": "https://lykujenkins.github.io/KN-420/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": { "enabled": false },
+    "playBilling": { "enabled": false }
+  },
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://lykujenkins.github.io/KN-420/",
+  "minSdkVersion": 21,
+  "_comment": "See ANDROID_BUILD.md for instructions on building the APK/AAB with Bubblewrap CLI"
+}
