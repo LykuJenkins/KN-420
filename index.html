@@ -1,0 +1,4143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Stoner Book · Local Journal</title>
+<meta name="description" content="A private, local-only journal for smoke sessions, strains, terpenes, effects, ideas, and audio notes. Your data never leaves your device.">
+<meta name="theme-color" content="#0f1410">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stoner Book">
+<link rel="manifest" id="manifest-link">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0f0a;
+    --bg-elev: #131a13;
+    --bg-card: #161e16;
+    --border: #1f2a1f;
+    --border-strong: #2a3a2a;
+    --text: #e8f0e8;
+    --text-dim: #9aa89a;
+    --text-mute: #6b7a6b;
+    --green: #4ade80;
+    --green-bright: #86efac;
+    --lime: #a3e635;
+    --amber: #fbbf24;
+    --danger: #f87171;
+    --radius: 14px;
+    --radius-sm: 10px;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 90px);
+    position: relative;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+    backdrop-filter: blur(8px);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    border-radius: 9px;
+    display: grid; place-items: center;
+    font-size: 18px;
+  }
+  .brand-title { font-weight: 700; font-size: 16px; letter-spacing: -0.2px; }
+  .brand-sub { font-size: 11px; color: var(--text-mute); margin-top: -2px; }
+
+  .header-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s ease;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--border-strong); }
+  .icon-btn:active { transform: scale(0.94); }
+
+  /* Main views */
+  main { padding: 16px 20px; }
+  .view { display: none; animation: fadeIn 0.2s ease; }
+  .view.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .view-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    margin-bottom: 4px;
+  }
+  .view-sub { color: var(--text-mute); font-size: 13px; margin-bottom: 20px; }
+
+  /* Form */
+  .field { margin-bottom: 18px; }
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  input[type="text"], input[type="datetime-local"], textarea, select {
+    width: 100%;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-family: inherit;
+    transition: border 0.15s;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--green);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  input[type="datetime-local"] { color-scheme: dark; }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Type chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 8px 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+    color: var(--text-dim);
+  }
+  .chip:hover { border-color: var(--border-strong); color: var(--text); }
+  .chip.active {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: var(--green);
+    color: var(--green-bright);
+  }
+
+  /* Mood selector */
+  .mood-row { display: flex; justify-content: space-between; gap: 8px; }
+  .mood-btn {
+    flex: 1;
+    aspect-ratio: 1;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: grid; place-items: center;
+    filter: grayscale(0.6);
+    opacity: 0.5;
+  }
+  .mood-btn:hover { opacity: 0.85; }
+  .mood-btn.active {
+    border-color: var(--green);
+    background: rgba(74, 222, 128, 0.1);
+    filter: grayscale(0);
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  /* Effects grid */
+  .effects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .effect-chip {
+    padding: 10px 12px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+    color: var(--text-dim);
+    transition: all 0.15s;
+  }
+  .effect-chip:hover { color: var(--text); }
+  .effect-chip.active {
+    background: rgba(163, 230, 53, 0.1);
+    border-color: var(--lime);
+    color: var(--lime);
+  }
+
+  /* Audio recorder */
+  .audio-recorder {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .rec-btn {
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: var(--danger);
+    border: none;
+    cursor: pointer;
+    display: grid; place-items: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .rec-btn:hover { transform: scale(1.05); }
+  .rec-btn.recording {
+    background: var(--danger);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .rec-btn.recording::after {
+    content: '';
+    width: 18px; height: 18px;
+    background: white;
+    border-radius: 3px;
+  }
+  .rec-btn:not(.recording)::after {
+    content: '';
+    width: 20px; height: 20px;
+    background: white;
+    border-radius: 50%;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.5); }
+    50% { box-shadow: 0 0 0 12px rgba(248, 113, 113, 0); }
+  }
+  .rec-info { flex: 1; }
+  .rec-status { font-size: 14px; font-weight: 600; }
+  .rec-time { font-size: 12px; color: var(--text-mute); font-variant-numeric: tabular-nums; }
+  .rec-clear {
+    background: none;
+    border: none;
+    color: var(--text-mute);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 6px;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    color: #0a0f0a;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s;
+    margin-top: 8px;
+  }
+  .btn-primary:hover { transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* History list */
+  .search-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .search-row input { flex: 1; }
+  .search-row select { width: 130px; }
+
+  .session-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .session-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+  .session-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .session-strain { font-weight: 600; font-size: 15px; }
+  .session-type-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .badge-sativa { background: rgba(251, 191, 36, 0.15); color: var(--amber); }
+  .badge-indica { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
+  .badge-hybrid { background: rgba(74, 222, 128, 0.15); color: var(--green-bright); }
+  .badge-cbd { background: rgba(96, 165, 250, 0.15); color: #93c5fd; }
+  .badge-other { background: rgba(156, 163, 175, 0.15); color: #d1d5db; }
+
+  .session-meta {
+    font-size: 12px;
+    color: var(--text-mute);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-bottom: 8px;
+  }
+  .session-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .session-note {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .session-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 999px;
+    color: var(--text-mute);
+  }
+  .has-audio { color: var(--green); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-mute);
+  }
+  .empty-state-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.6; }
+  .empty-state-text { font-size: 14px; }
+
+  /* Insights */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  .stat-label { font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  .insight-section { margin-bottom: 24px; }
+  .insight-section h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .leaderboard-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+  }
+  .rank { font-size: 16px; font-weight: 700; color: var(--text-mute); width: 22px; }
+  .lb-name { flex: 1; font-size: 14px; font-weight: 500; }
+  .lb-meta { font-size: 12px; color: var(--text-mute); }
+  .lb-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 6px;
+    width: 100%;
+  }
+  .lb-bar-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--lime)); border-radius: 3px; }
+
+  .insight-card {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.08), rgba(163, 230, 53, 0.05));
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text);
+  }
+  .insight-card strong { color: var(--green-bright); }
+
+  /* Bottom nav */
+  nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(10, 15, 10, 0.95);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    max-width: 680px;
+    margin: 0 auto;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 100;
+  }
+  .nav-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-mute);
+    padding: 12px 0 14px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .nav-icon { font-size: 20px; line-height: 1; }
+  .nav-btn.active { color: var(--green); }
+  .nav-btn:active { transform: scale(0.97); }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; animation: fadeIn 0.2s; }
+  .modal {
+    background: var(--bg);
+    border-top: 1px solid var(--border-strong);
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 680px;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 24px 20px calc(env(safe-area-inset-bottom) + 24px);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--border-strong);
+    border-radius: 2px;
+    margin: -8px auto 18px;
+  }
+  .modal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+  .modal-title { font-size: 20px; font-weight: 700; }
+  .modal-close {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .detail-section { margin-bottom: 18px; }
+  .detail-label { font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .detail-value { font-size: 15px; }
+  .detail-note { font-size: 14px; line-height: 1.55; color: var(--text); white-space: pre-wrap; }
+
+  .mood-display { display: flex; align-items: center; gap: 10px; font-size: 22px; }
+  .mood-arrow { color: var(--text-mute); font-size: 16px; }
+  .mood-lift { font-size: 13px; padding: 3px 10px; border-radius: 999px; font-weight: 600; margin-left: 6px; }
+  .lift-up { background: rgba(74, 222, 128, 0.15); color: var(--green-bright); }
+  .lift-flat { background: rgba(156, 163, 175, 0.15); color: #d1d5db; }
+  .lift-down { background: rgba(248, 113, 113, 0.15); color: var(--danger); }
+
+  audio { width: 100%; margin-top: 8px; }
+
+  .btn-danger {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+  }
+  .btn-danger:hover { background: rgba(248, 113, 113, 0.08); }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    padding: 12px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    z-index: 300;
+    opacity: 0;
+    transition: all 0.25s;
+    pointer-events: none;
+    max-width: 90%;
+    text-align: center;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Install banner */
+  #install-banner {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 1px solid var(--green);
+    border-radius: 14px;
+    padding: 12px 16px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    z-index: 150;
+    max-width: calc(100% - 40px);
+  }
+  #install-banner.show { display: flex; }
+  #install-banner .install-text { flex: 1; font-size: 13px; }
+  #install-banner button {
+    background: var(--green);
+    color: #0a0f0a;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  #install-banner .close-banner {
+    background: none;
+    color: var(--text-mute);
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  /* Terpene tooltip tags */
+  .tag.terpene-tag {
+    cursor: help;
+    position: relative;
+    border-bottom: 1px dotted var(--text-mute);
+  }
+  .tag.terpene-tag:hover { color: var(--green-bright); border-color: var(--green); }
+  .tag.terpene-tag .terpene-info-icon { font-size: 9px; opacity: 0.6; margin-left: 2px; }
+
+  /* Strain info image */
+  .strain-info-thumb {
+    width: 48px; height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--bg-elev);
+  }
+  .strain-info-title-row { display: flex; gap: 10px; align-items: center; min-width: 0; flex: 1; }
+  .strain-info-title-text { min-width: 0; }
+
+  /* Add to library button */
+  .add-to-library-btn {
+    width: 100%;
+    padding: 10px;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid var(--green);
+    color: var(--green-bright);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.15s;
+  }
+  .add-to-library-btn:hover { background: rgba(74, 222, 128, 0.18); }
+  .add-to-library-btn:disabled { opacity: 0.5; cursor: default; }
+  .in-library-badge {
+    width: 100%;
+    padding: 10px;
+    background: rgba(74, 222, 128, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text-mute);
+    border-radius: 8px;
+    font-size: 12px;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  /* Library view */
+  .library-search-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .library-search-row input { flex: 1; }
+  .library-search-row select { width: 130px; }
+
+  .library-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .library-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+  .library-card-thumb {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--bg-elev);
+  }
+  .library-card-thumb-placeholder {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    background: var(--bg-elev);
+  }
+  .library-card-body { flex: 1; min-width: 0; }
+  .library-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+  .library-card-name { font-weight: 600; font-size: 15px; }
+  .library-card-desc {
+    font-size: 12px;
+    color: var(--text-mute);
+    line-height: 1.4;
+    margin-top: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .library-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .custom-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    background: rgba(163, 230, 53, 0.15);
+    color: var(--lime);
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* Edit session button row */
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .modal-actions .btn-danger { margin-top: 0; flex: 1; }
+  .btn-secondary {
+    flex: 1;
+    padding: 12px;
+    background: var(--bg-elev);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-secondary:hover { border-color: var(--green); color: var(--green-bright); }
+
+  /* Cancel edit button (in log form when editing) */
+  .cancel-edit-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--text-mute);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .cancel-edit-btn:hover { color: var(--text); border-color: var(--border-strong); }
+
+  .editing-banner {
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    color: var(--amber);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .editing-banner.show { display: flex; }
+
+  /* Strain detail modal image */
+  .strain-detail-thumb {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+  }
+
+  /* Hourly heatmap timeline */
+  .heatmap-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .heatmap-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .heatmap-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .heatmap-toggle {
+    display: flex;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+  }
+  .heatmap-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-mute);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .heatmap-toggle-btn.active {
+    background: var(--bg-card);
+    color: var(--green-bright);
+  }
+
+  .heatmap {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 3px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  .heatmap::-webkit-scrollbar { height: 6px; }
+  .heatmap::-webkit-scrollbar-track { background: transparent; }
+  .heatmap::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+  .heatmap-cell {
+    aspect-ratio: 1 / 1.4;
+    min-width: 26px;
+    border-radius: 6px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .heatmap-cell:hover {
+    transform: scale(1.08);
+    border-color: var(--green);
+    z-index: 2;
+  }
+  .heatmap-cell.active {
+    border-color: var(--green-bright);
+    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3);
+  }
+  .heatmap-cell-value {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .heatmap-cell-hour {
+    font-size: 8px;
+    color: var(--text-mute);
+    margin-top: 2px;
+    line-height: 1;
+  }
+  .heatmap-cell.has-data .heatmap-cell-value { color: white; }
+  .heatmap-cell.has-data .heatmap-cell-hour { color: rgba(255,255,255,0.7); }
+
+  .heatmap-axis {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 3px;
+    margin-top: 6px;
+    font-size: 9px;
+    color: var(--text-mute);
+    text-align: center;
+    min-width: 100%;
+  }
+  .heatmap-axis span { min-width: 26px; }
+
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 10px;
+    color: var(--text-mute);
+  }
+  .heatmap-gradient {
+    height: 8px;
+    flex: 1;
+    border-radius: 4px;
+    background: linear-gradient(to right, #131a13, #1f3a1f, #2d5a2d, #4ade80, #a3e635, #fbbf24);
+  }
+  .heatmap-peak-info {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(74, 222, 128, 0.05);
+    border: 1px solid rgba(74, 222, 128, 0.15);
+    border-radius: 8px;
+    line-height: 1.5;
+  }
+  .heatmap-peak-info strong { color: var(--green-bright); }
+
+  /* Insights sub-tabs */
+  .sub-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-bottom: 18px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sub-tabs::-webkit-scrollbar { display: none; }
+  .sub-tab {
+    background: none;
+    border: none;
+    color: var(--text-mute);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+  }
+  .sub-tab:hover { color: var(--text); }
+  .sub-tab.active { color: var(--green-bright); border-bottom-color: var(--green); }
+
+  /* Day-of-week view */
+  .dow-list { display: flex; flex-direction: column; gap: 8px; }
+  .dow-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .dow-day {
+    width: 38px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .dow-bar-wrap {
+    flex: 1;
+    height: 28px;
+    background: var(--bg-elev);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .dow-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--lime));
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 30px;
+    transition: width 0.4s ease;
+  }
+  .dow-meta {
+    font-size: 11px;
+    color: var(--text-mute);
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* 7-day activity strip */
+  .seven-day-strip {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .seven-day-col {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 6px;
+    text-align: center;
+  }
+  .seven-day-day { font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.3px; }
+  .seven-day-date { font-size: 16px; font-weight: 700; margin: 4px 0; }
+  .seven-day-count {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--green-bright);
+    line-height: 1;
+  }
+  .seven-day-count.zero { color: var(--text-mute); opacity: 0.4; }
+  .seven-day-dots {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+  .seven-day-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  /* Calendar year view (GitHub-style) */
+  .calendar-year {
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  .calendar-year::-webkit-scrollbar { height: 6px; }
+  .calendar-year::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+  .calendar-grid {
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, 1fr);
+    gap: 3px;
+    padding: 4px 0;
+  }
+  .calendar-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .calendar-cell:hover { transform: scale(1.4); z-index: 2; }
+  .calendar-cell.has-data { border-color: transparent; }
+  .calendar-month-labels {
+    display: inline-grid;
+    grid-auto-flow: column;
+    gap: 3px;
+    font-size: 9px;
+    color: var(--text-mute);
+    margin-bottom: 4px;
+  }
+  .calendar-month-labels span { width: 12px; text-align: center; }
+  .calendar-month-labels span.label { width: auto; padding-right: 8px; }
+  .calendar-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 10px;
+    color: var(--text-mute);
+    justify-content: flex-end;
+  }
+  .calendar-legend-cells { display: flex; gap: 3px; }
+  .calendar-legend-cell {
+    width: 12px; height: 12px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+  }
+
+  /* ===== Dave Chatbot ===== */
+  #view-dave {
+    display: none;
+    flex-direction: column;
+    height: calc(100vh - 0px);
+    padding: 0 !important;
+    overflow: hidden;
+  }
+  #view-dave.active {
+    display: flex;
+  }
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .chat-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4ade80, #a3e635);
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .chat-name { font-weight: 700; font-size: 15px; }
+  .chat-status {
+    font-size: 11px;
+    color: var(--text-mute);
+    font-style: italic;
+  }
+  .chat-status.online { color: var(--green-bright); font-style: normal; }
+  .chat-settings-btn {
+    margin-left: auto;
+    width: 36px; height: 36px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 16px;
+  }
+  .chat-settings-btn:hover { color: var(--text); border-color: var(--border-strong); }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scroll-behavior: smooth;
+  }
+  .chat-messages::-webkit-scrollbar { width: 6px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+  .msg {
+    max-width: 82%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    animation: msgIn 0.2s ease;
+  }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    color: #0a0f0a;
+    border-bottom-right-radius: 4px;
+  }
+  .msg.dave {
+    align-self: flex-start;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+  .msg.dave.typing {
+    color: var(--text-mute);
+    font-style: italic;
+  }
+  .msg-context {
+    align-self: center;
+    font-size: 10px;
+    color: var(--text-mute);
+    background: rgba(255,255,255,0.03);
+    padding: 3px 10px;
+    border-radius: 999px;
+    max-width: 90%;
+    text-align: center;
+  }
+
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px calc(env(safe-area-inset-bottom) + 12px);
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .chat-input-row input {
+    flex: 1;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 16px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .chat-input-row input:focus { outline: none; border-color: var(--green); }
+  .chat-send-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    border: none;
+    color: #0a0f0a;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.1s;
+  }
+  .chat-send-btn:active { transform: scale(0.92); }
+  .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* API key setup screen */
+  .api-key-setup {
+    flex: 1;
+    overflow-y: auto;
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .setup-door {
+    font-size: 56px;
+    margin-bottom: 16px;
+    animation: knock 2s ease-in-out infinite;
+  }
+  @keyframes knock {
+    0%, 100% { transform: rotate(0deg); }
+    20%, 60% { transform: rotate(-8deg); }
+    40%, 80% { transform: rotate(8deg); }
+  }
+  .setup-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .setup-sub {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 24px;
+    max-width: 380px;
+    line-height: 1.5;
+  }
+  .setup-steps {
+    text-align: left;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    max-width: 380px;
+    width: 100%;
+  }
+  .setup-steps ol {
+    padding-left: 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .setup-steps a {
+    color: var(--green-bright);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--green);
+  }
+  .setup-steps a:hover { color: var(--lime); }
+  .setup-key-input {
+    width: 100%;
+    max-width: 380px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: monospace;
+    margin-bottom: 12px;
+  }
+  .setup-key-input:focus { outline: none; border-color: var(--green); }
+  .setup-connect-btn {
+    width: 100%;
+    max-width: 380px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    color: #0a0f0a;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 16px;
+  }
+  .setup-privacy {
+    font-size: 11px;
+    color: var(--text-mute);
+    max-width: 380px;
+    line-height: 1.5;
+  }
+  .setup-error {
+    color: var(--danger);
+    font-size: 12px;
+    margin-bottom: 10px;
+    min-height: 16px;
+  }
+
+  /* Settings modal for Dave */
+  .dave-settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .dave-settings-row:last-child { border-bottom: none; }
+  .dave-settings-label { flex: 1; }
+  .dave-settings-title { font-size: 14px; font-weight: 600; }
+  .dave-settings-desc { font-size: 11px; color: var(--text-mute); margin-top: 2px; }
+
+  /* Toggle switch */
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--border-strong);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--green); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: left 0.2s;
+  }
+  .toggle.on::after { left: 22px; }
+
+  /* Strain autocomplete + lookup */
+  .strain-input-wrap { position: relative; }
+  .strain-actions { display: flex; gap: 8px; align-items: stretch; }
+  .strain-actions input { flex: 1; }
+  .lookup-btn {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 0 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .lookup-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green-bright); }
+  .lookup-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .lookup-btn.loading { border-color: var(--amber); color: var(--amber); pointer-events: none; }
+
+  .autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--bg-elev);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 50;
+    display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .autocomplete-dropdown.show { display: block; }
+  .autocomplete-item {
+    padding: 11px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover, .autocomplete-item.active { background: rgba(74, 222, 128, 0.08); }
+  .autocomplete-item-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+  .autocomplete-item-type {
+    font-size: 10px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+  }
+
+  .strain-info {
+    background: rgba(74, 222, 128, 0.05);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-top: 10px;
+    display: none;
+    font-size: 13px;
+    line-height: 1.5;
+    animation: fadeIn 0.2s;
+  }
+  .strain-info.show { display: block; }
+  .strain-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .strain-info-title { font-weight: 700; color: var(--green-bright); font-size: 14px; }
+  .strain-info-source {
+    font-size: 10px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .strain-info-close {
+    background: none;
+    border: none;
+    color: var(--text-mute);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .strain-info-close:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+  .strain-info-desc { color: var(--text-dim); margin-bottom: 8px; }
+  .strain-info-meta {
+    font-size: 11px;
+    color: var(--text-mute);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+  }
+  .strain-info-meta .tag { font-size: 10px; padding: 2px 7px; }
+
+  @media (min-width: 700px) {
+    .effects-grid { grid-template-columns: repeat(3, 1fr); }
+    .stats-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">🌿</div>
+    <div>
+      <div class="brand-title">The Stoner Book</div>
+      <div class="brand-sub">Private · Local · Yours</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="icon-btn" id="export-btn" title="Export backup">⬇</button>
+    <button class="icon-btn" id="import-btn" title="Import backup">⬆</button>
+    <input type="file" id="import-file" accept="application/json" style="display:none">
+  </div>
+</header>
+
+<main>
+  <!-- LOG VIEW -->
+  <section class="view active" id="view-log">
+    <h1 class="view-title">Log a Session</h1>
+    <p class="view-sub">Capture it while it's fresh. Audio, notes, vibes — all yours.</p>
+
+    <form id="session-form">
+      <div class="field">
+        <label for="datetime">When</label>
+        <input type="datetime-local" id="datetime" required>
+      </div>
+
+      <div class="field">
+        <label for="strain">Strain</label>
+        <div class="strain-input-wrap">
+          <div class="strain-actions">
+            <input type="text" id="strain" placeholder="e.g. Sour Diesel" autocomplete="off">
+            <button type="button" class="lookup-btn" id="lookup-btn" disabled>Look up</button>
+          </div>
+          <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
+        </div>
+        <div class="strain-info" id="strain-info"></div>
+      </div>
+
+      <div class="field">
+        <label for="type">Type</label>
+        <select id="type">
+          <option value="">—</option>
+          <option value="Sativa">Sativa</option>
+          <option value="Indica">Indica</option>
+          <option value="Hybrid">Hybrid</option>
+          <option value="CBD">CBD-dominant</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Terpenes <span style="text-transform:none;color:var(--text-mute);font-weight:400">(comma-separated)</span></label>
+        <input type="text" id="terpenes" placeholder="limonene, myrcene, caryophyllene">
+      </div>
+
+      <div class="field">
+        <label>Mood Before</label>
+        <div class="mood-row" id="mood-before">
+          <div class="mood-btn" data-val="1">😞</div>
+          <div class="mood-btn" data-val="2">😕</div>
+          <div class="mood-btn" data-val="3">😐</div>
+          <div class="mood-btn" data-val="4">🙂</div>
+          <div class="mood-btn" data-val="5">😄</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Mood After</label>
+        <div class="mood-row" id="mood-after">
+          <div class="mood-btn" data-val="1">😞</div>
+          <div class="mood-btn" data-val="2">😕</div>
+          <div class="mood-btn" data-val="3">😐</div>
+          <div class="mood-btn" data-val="4">🙂</div>
+          <div class="mood-btn" data-val="5">😄</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Effects</label>
+        <div class="effects-grid" id="effects-grid"></div>
+      </div>
+
+      <div class="field">
+        <label for="notes">Ideas & Notes</label>
+        <textarea id="notes" placeholder="What's on your mind? Ideas, observations, weird thoughts..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Voice Note</label>
+        <div class="audio-recorder">
+          <button type="button" class="rec-btn" id="rec-btn" aria-label="Record"></button>
+          <div class="rec-info">
+            <div class="rec-status" id="rec-status">Tap to record</div>
+            <div class="rec-time" id="rec-time"></div>
+          </div>
+          <button type="button" class="rec-clear" id="rec-clear" style="display:none">✕</button>
+        </div>
+      </div>
+
+      <div class="editing-banner" id="editing-banner">
+        ✏️ Editing session — changes will update the existing record.
+      </div>
+
+      <button type="submit" class="btn-primary" id="save-btn">Save Session</button>
+      <button type="button" class="cancel-edit-btn" id="cancel-edit-btn" style="display:none">Cancel Edit</button>
+    </form>
+  </section>
+
+  <!-- HISTORY VIEW -->
+  <section class="view" id="view-history">
+    <h1 class="view-title">History</h1>
+    <p class="view-sub" id="history-count">0 sessions logged</p>
+
+    <div class="search-row">
+      <input type="text" id="search-input" placeholder="Search strains, notes, terpenes...">
+      <select id="strain-filter">
+        <option value="">All strains</option>
+      </select>
+    </div>
+
+    <div id="history-list"></div>
+  </section>
+
+  <!-- INSIGHTS VIEW -->
+  <section class="view" id="view-insights">
+    <h1 class="view-title">Insights</h1>
+    <p class="view-sub">Patterns in your sessions. What sparks what?</p>
+
+    <div class="sub-tabs" id="insight-sub-tabs">
+      <button class="sub-tab active" data-subtab="overview">📊 Overview</button>
+      <button class="sub-tab" data-subtab="hours">🕐 Hours</button>
+      <button class="sub-tab" data-subtab="days">📅 Days</button>
+      <button class="sub-tab" data-subtab="year">🗓️ Year</button>
+    </div>
+
+    <div id="insights-content"></div>
+  </section>
+
+  <!-- LIBRARY VIEW -->
+  <section class="view" id="view-library">
+    <h1 class="view-title">Library</h1>
+    <p class="view-sub" id="library-count">Browse strains</p>
+
+    <div class="library-search-row">
+      <input type="text" id="library-search" placeholder="Search strains...">
+      <select id="library-filter">
+        <option value="">All types</option>
+        <option value="Sativa">Sativa</option>
+        <option value="Indica">Indica</option>
+        <option value="Hybrid">Hybrid</option>
+        <option value="CBD">CBD</option>
+        <option value="custom">My custom</option>
+      </select>
+    </div>
+
+    <div id="library-list"></div>
+  </section>
+
+  <!-- DAVE VIEW -->
+  <section class="view" id="view-dave">
+    <div id="dave-content"></div>
+  </section>
+</main>
+
+<!-- Bottom Nav -->
+<nav>
+  <button class="nav-btn active" data-view="log">
+    <span class="nav-icon">✍️</span>
+    <span>Log</span>
+  </button>
+  <button class="nav-btn" data-view="history">
+    <span class="nav-icon">📖</span>
+    <span>History</span>
+  </button>
+  <button class="nav-btn" data-view="library">
+    <span class="nav-icon">📚</span>
+    <span>Library</span>
+  </button>
+  <button class="nav-btn" data-view="insights">
+    <span class="nav-icon">✨</span>
+    <span>Insights</span>
+  </button>
+  <button class="nav-btn" data-view="dave">
+    <span class="nav-icon">🚪</span>
+    <span>Dave</span>
+  </button>
+</nav>
+
+<!-- Session Detail Modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Install Banner -->
+<div id="install-banner">
+  <div class="install-text">Install Stoner Book to your home screen</div>
+  <button id="install-now">Install</button>
+  <button class="close-banner" id="install-dismiss">✕</button>
+</div>
+
+<script src="https://unpkg.com/dexie@4.0.8/dist/dexie.min.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  // ===== Database =====
+  const db = new Dexie('StonerBook');
+  db.version(1).stores({
+    sessions: '++id, datetime, strain, type, createdAt'
+  });
+  db.version(2).stores({
+    customStrains: '++id, name, type, createdAt'
+  });
+  db.version(3).stores({
+    daveMessages: '++id, role, createdAt'
+  });
+
+  // ===== Constants =====
+  const EFFECTS = [
+    'Relaxed', 'Euphoric', 'Creative', 'Happy', 'Sleepy', 'Hungry',
+    'Focused', 'Giggly', 'Uplifted', 'Energetic', 'Calm', 'Talkative',
+    'Aroused', 'Tingly', 'Dreamy', 'Clear-Headed'
+  ];
+
+  // ===== Strain Library (curated, ships offline) =====
+  const STRAIN_LIBRARY = [
+    // --- Sativas ---
+    {name:"Sour Diesel",aliases:["Sour D","Sourdiesel","Sour Deez"],type:"Sativa",terpenes:["caryophyllene","limonene","myrcene"],effects:["Energetic","Euphoric","Creative","Happy","Uplifted"],flavors:["Diesel","Citrus","Earthy"],description:"Fast-acting sativa-dominant strain with a pungent diesel aroma. Energizing, dreamy cerebral effects."},
+    {name:"Jack Herer",aliases:[],type:"Sativa",terpenes:["terpinolene","pinene","caryophyllene"],effects:["Energetic","Creative","Uplifted","Happy","Focused"],flavors:["Pine","Earthy","Citrus"],description:"Named after the cannabis activist. Clear-headed, blissful, creative high with piney aroma."},
+    {name:"Durban Poison",aliases:[],type:"Sativa",terpenes:["terpinolene","myrcene","ocimene"],effects:["Energetic","Uplifted","Focused","Creative"],flavors:["Sweet","Earthy","Pine"],description:"Pure sativa landrace from South Africa. Sweet, energizing, focused high — like espresso."},
+    {name:"Green Crack",aliases:["Green Cush"],type:"Sativa",terpenes:["myrcene","caryophyllene","limonene"],effects:["Energetic","Uplifted","Focused","Happy"],flavors:["Citrus","Mango","Earthy"],description:"Sharply focused, energetic high with mango-citrus flavor. Renamed by Snoop Dogg."},
+    {name:"Super Silver Haze",aliases:["SSH"],type:"Sativa",terpenes:["myrcene","caryophyllene","humulene"],effects:["Energetic","Euphoric","Uplifted","Creative"],flavors:["Earthy","Citrus","Skunk"],description:"Cross of Skunk, Northern Lights, and Haze. Energizing, euphoric, long-lasting."},
+    {name:"Strawberry Cough",aliases:[],type:"Sativa",terpenes:["pinene","myrcene","caryophyllene"],effects:["Uplifted","Energetic","Creative","Happy"],flavors:["Strawberry","Earthy","Sweet"],description:"Sativa that makes you cough with a sweet strawberry aroma. Uplifting and social."},
+    {name:"Maui Wowie",aliases:["Maui Waui"],type:"Sativa",terpenes:["myrcene","limonene","caryophyllene"],effects:["Energetic","Uplifted","Creative","Happy"],flavors:["Tropical","Citrus","Pine"],description:"Hawaiian landrace. Tropical, euphoric, stress-relieving high."},
+    {name:"Acapulco Gold",aliases:[],type:"Sativa",terpenes:["myrcene","caryophyllene","limonene"],effects:["Energetic","Uplifted","Happy","Creative"],flavors:["Earthy","Pungent","Citrus"],description:"Legendary Mexican landrace. Cached-toffee aroma, euphoric, motivating high."},
+    {name:"Trainwreck",aliases:[],type:"Sativa",terpenes:["terpinolene","myrcene","pinene"],effects:["Euphoric","Energetic","Creative","Happy"],flavors:["Lemon","Pine","Earthy"],description:"Sativa-dominant hybrid with intense lemon-pine aroma. Fast-hitting euphoria."},
+    {name:"Lamb's Bread",aliases:["Lamb's Breath"],type:"Sativa",terpenes:["myrcene","limonene","caryophyllene"],effects:["Energetic","Creative","Uplifted","Happy"],flavors:["Earthy","Citrus","Sweet"],description:"Bob Marley's rumored favorite. Energizing, creative, spiritual high."},
+    {name:"Tangie",aliases:[],type:"Sativa",terpenes:["limonene","myrcene","caryophyllene"],effects:["Uplifted","Energetic","Creative","Happy"],flavors:["Tangerine","Citrus","Sweet"],description:"Tangerine Dream cross. Heavy tangerine aroma, uplifting creative high."},
+    {name:"Ghost Train Haze",aliases:["GTH"],type:"Sativa",terpenes:["terpinolene","limonene","pinene"],effects:["Energetic","Uplifted","Creative","Focused"],flavors:["Citrus","Pine","Earthy"],description:"Strong sativa with potent cerebral effects. Citrus-pine aroma, not for beginners."},
+    {name:"Moby Dick",aliases:[],type:"Sativa",terpenes:["terpinolene","myrcene","pinene"],effects:["Energetic","Uplifted","Happy","Focused"],flavors:["Citrus","Pine","Earthy"],description:"Haze x White Widow cross. Potent, euphoric, focused high with citrus aroma."},
+    {name:"Chocolope",aliases:["D-Line"],type:"Sativa",terpenes:["myrcene","limonene","caryophyllene"],effects:["Energetic","Euphoric","Creative","Uplifted"],flavors:["Chocolate","Coffee","Earthy"],description:"Chocolate Thai x Cannalope Haze. Coffee-chocolate aroma, euphoric high."},
+    {name:"Amnesia Haze",aliases:[],type:"Sativa",terpenes:["limonene","myrcene","caryophyllene"],effects:["Uplifted","Energetic","Creative","Euphoric"],flavors:["Citrus","Earthy","Lemon"],description:"Complex sativa with earthy-citrus aroma. Uplifting, energizing, mood-boosting."},
+
+    // --- Indicas ---
+    {name:"Granddaddy Purple",aliases:["GDP","Grand Daddy Purp","Granddaddy Purp"],type:"Indica",terpenes:["myrcene","caryophyllene","linalool"],effects:["Relaxed","Sleepy","Happy","Euphoric","Hungry"],flavors:["Grape","Berry","Earthy"],description:"Purple Urkle x Big Bud. Classic indica — grape-berry flavor, full-body relaxation."},
+    {name:"Northern Lights",aliases:["NL"],type:"Indica",terpenes:["myrcene","pinene","caryophyllene"],effects:["Relaxed","Sleepy","Euphoric","Happy","Hungry"],flavors:["Earthy","Sweet","Pine"],description:"Classic pure indica. Sweet, earthy, piney. Body relaxation and dreamy euphoria."},
+    {name:"Afghan Kush",aliases:[],type:"Indica",terpenes:["myrcene","humulene","caryophyllene"],effects:["Relaxed","Sleepy","Hungry","Euphoric"],flavors:["Earthy","Pine","Woody"],description:"Landrace from Hindu Kush region. Heavy body high, earthy-woody aroma."},
+    {name:"Hindu Kush",aliases:[],type:"Indica",terpenes:["myrcene","humulene","pinene"],effects:["Relaxed","Sleepy","Happy","Hungry"],flavors:["Earthy","Pine","Sweet"],description:"Pure landrace indica. Earthy-pine aroma, deeply relaxing and meditative."},
+    {name:"Bubba Kush",aliases:["Bubba"],type:"Indica",terpenes:["myrcene","caryophyllene","limonene"],effects:["Relaxed","Sleepy","Happy","Hungry"],flavors:["Coffee","Chocolate","Earthy"],description:"Heavy indica with coffee-chocolate aroma. Sleepy, happy, body-melting relaxation."},
+    {name:"Blackberry Kush",aliases:["BBK"],type:"Indica",terpenes:["myrcene","caryophyllene","linalool"],effects:["Relaxed","Sleepy","Happy","Euphoric"],flavors:["Berry","Earthy","Sweet"],description:"Afghani x Blackberry. Sweet berry aroma, heavy body relaxation, sleep aid."},
+    {name:"Blueberry",aliases:[],type:"Indica",terpenes:["myrcene","pinene","caryophyllene"],effects:["Relaxed","Happy","Euphoric","Sleepy"],flavors:["Berry","Blueberry","Sweet"],description:"DJ Short classic. Sweet blueberry aroma, long-lasting euphoric relaxation."},
+    {name:"Purple Kush",aliases:[],type:"Indica",terpenes:["myrcene","caryophyllene","humulene"],effects:["Relaxed","Sleepy","Euphoric","Happy"],flavors:["Earthy","Grape","Sweet"],description:"Pure indica from Oakland. Earthy-sweet grape aroma, deep sleepy relaxation."},
+    {name:"LA Confidential",aliases:[],type:"Indica",terpenes:["myrcene","pinene","caryophyllene"],effects:["Relaxed","Sleepy","Euphoric","Happy"],flavors:["Earthy","Pine","Skunk"],description:"OG LA Affie x Afghani. Discreet piney-skunky aroma, heavy sleepy high."},
+    {name:"Master Kush",aliases:[],type:"Indica",terpenes:["myrcene","caryophyllene","humulene"],effects:["Relaxed","Euphoric","Sleepy","Happy"],flavors:["Earthy","Citrus","Pine"],description:"Hindu Kush x Skunk. Earthy-citrus aroma, balanced body relaxation without couch-lock."},
+    {name:"Critical Mass",aliases:[],type:"Indica",terpenes:["myrcene","caryophyllene","humulene"],effects:["Relaxed","Sleepy","Happy","Hungry"],flavors:["Earthy","Sweet","Pungent"],description:"Afghani x Skunk #1. High-yielding, sweet-pungent aroma, heavy body high."},
+    {name:"Death Star",aliases:[],type:"Indica",terpenes:["myrcene","limonene","caryophyllene"],effects:["Relaxed","Euphoric","Happy","Sleepy"],flavors:["Diesel","Earthy","Pungent"],description:"Sour Diesel x Sensi Star. Pungent diesel aroma, relaxed euphoria."},
+    {name:"Kosher Kush",aliases:[],type:"Indica",terpenes:["myrcene","limonene","caryophyllene"],effects:["Relaxed","Sleepy","Euphoric","Happy"],flavors:["Earthy","Citrus","Pine"],description:"California indica. Earthy-citrus aroma, heavy body high, sleep aid."},
+    {name:"Skywalker OG",aliases:[],type:"Indica",terpenes:["myrcene","limonene","caryophyllene"],effects:["Relaxed","Sleepy","Euphoric","Happy"],flavors:["Earthy","Citrus","Diesel"],description:"Skywalker x OG Kush. Earthy-citrus aroma, heavy relaxation and sleep."},
+    {name:"Ice Cream Cake",aliases:["ICC"],type:"Indica",terpenes:["myrcene","caryophyllene","limonene"],effects:["Relaxed","Happy","Euphoric","Sleepy"],flavors:["Cream","Vanilla","Earthy"],description:"Wedding Cake x Gelato 33. Creamy-vanilla aroma, relaxed happy high."},
+
+    // --- Hybrids ---
+    {name:"Blue Dream",aliases:[],type:"Hybrid",terpenes:["myrcene","pinene","caryophyllene"],effects:["Relaxed","Uplifted","Creative","Happy","Euphoric"],flavors:["Berry","Earthy","Sweet"],description:"Blueberry x Haze. Sativa-dominant hybrid. Berry-sweet flavor, balanced high. Most popular US strain."},
+    {name:"OG Kush",aliases:["OGK"],type:"Hybrid",terpenes:["limonene","myrcene","caryophyllene"],effects:["Euphoric","Relaxed","Happy","Hungry"],flavors:["Earthy","Pine","Diesel"],description:"California classic. Earthy-pine-diesel aroma, intense euphoria and relaxation."},
+    {name:"Girl Scout Cookies",aliases:["GSC","Cookies"],type:"Hybrid",terpenes:["caryophyllene","limonene","humulene"],effects:["Euphoric","Relaxed","Happy","Hungry"],flavors:["Sweet","Earthy","Pungent"],description:"OG Kush x Durban Poison. Sweet-earthy aroma, euphoric relaxation with uplift."},
+    {name:"Wedding Cake",aliases:[],type:"Hybrid",terpenes:["limonene","myrcene","caryophyllene"],effects:["Relaxed","Happy","Euphoric","Hungry"],flavors:["Sweet","Vanilla","Earthy"],description:"Triangle Kush x Animal Mints. Vanilla-sweet aroma, relaxed euphoric high."},
+    {name:"Gelato",aliases:["Larry Bird"],type:"Hybrid",terpenes:["caryophyllene","limonene","humulene"],effects:["Euphoric","Relaxed","Creative","Happy"],flavors:["Sweet","Citrus","Earthy"],description:"Thin Mint GSC x Sunset Sherbet. Sweet-citrus aroma, balanced euphoria and relaxation."},
+    {name:"Runtz",aliases:[],type:"Hybrid",terpenes:["caryophyllene","limonene","linalool"],effects:["Euphoric","Relaxed","Happy","Tingly"],flavors:["Sweet","Citrus","Berry"],description:"Zkittlez x Gelato. Tropical-candy aroma, euphoric, tingly, happy high."},
+    {name:"Zkittlez",aliases:["Skittles"],type:"Hybrid",terpenes:["caryophyllene","linalool","humulene"],effects:["Relaxed","Happy","Euphoric","Sleepy"],flavors:["Sweet","Tropical","Berry"],description:"Grape Ape x Grapefruit. Fruity-candy aroma, calm euphoric relaxation."},
+    {name:"Pineapple Express",aliases:[],type:"Hybrid",terpenes:["myrcene","caryophyllene","limonene"],effects:["Energetic","Uplifted","Happy","Creative"],flavors:["Pineapple","Tropical","Earthy"],description:"Trainwreck x Hawaiian. Tropical-pineapple aroma, energetic uplifting high."},
+    {name:"AK-47",aliases:["AK47"],type:"Hybrid",terpenes:["caryophyllene","limonene","myrcene"],effects:["Euphoric","Relaxed","Creative","Happy"],flavors:["Earthy","Sweet","Sour"],description:"Colombian x Mexican x Thai x Afghani. Complex aroma, mellow, happy, long-lasting."},
+    {name:"White Widow",aliases:[],type:"Hybrid",terpenes:["myrcene","caryophyllene","pinene"],effects:["Euphoric","Energetic","Creative","Happy"],flavors:["Earthy","Pine","Citrus"],description:"Brazilian x South Indian. White-trichome covered buds, balanced euphoric high."},
+    {name:"Skywalker",aliases:[],type:"Hybrid",terpenes:["myrcene","limonene","caryophyllene"],effects:["Relaxed","Happy","Euphoric","Sleepy"],flavors:["Citrus","Earthy","Sweet"],description:"Blueberry x Mazar. Sweet-citrus aroma, relaxed happy high with stress relief."},
+    {name:"Cookies and Cream",aliases:[],type:"Hybrid",terpenes:["limonene","caryophyllene","myrcene"],effects:["Relaxed","Happy","Euphoric","Hungry"],flavors:["Vanilla","Cream","Earthy"],description:"Starfighter x Girl Scout Cookies. Creamy-vanilla aroma, happy relaxation."},
+    {name:"Bruce Banner",aliases:[],type:"Hybrid",terpenes:["myrcene","limonene","caryophyllene"],effects:["Energetic","Euphoric","Creative","Happy"],flavors:["Diesel","Citrus","Earthy"],description:"OG Kush x Strawberry Diesel. High-THC, diesel-citrus aroma, energetic euphoria."},
+    {name:"Cheese",aliases:["UK Cheese"],type:"Hybrid",terpenes:["caryophyllene","myrcene","humulene"],effects:["Relaxed","Happy","Euphoric","Hungry"],flavors:["Cheese","Earthy","Pungent"],description:"UK Skunk phenotype. Pungent cheese aroma, relaxed happy uplift."},
+    {name:"Chemdawg",aliases:["Chemdog"],type:"Hybrid",terpenes:["caryophyllene","myrcene","limonene"],effects:["Euphoric","Relaxed","Creative","Happy"],flavors:["Diesel","Earthy","Pungent"],description:"Legendary parent of Sour Diesel and OG Kush. Diesel aroma, cerebral euphoria."},
+    {name:"LSD",aliases:[],type:"Hybrid",terpenes:["limonene","myrcene","caryophyllene"],effects:["Euphoric","Creative","Happy","Dreamy"],flavors:["Earthy","Pungent","Citrus"],description:"Mazar-I-Sharif x Super Skunk. Trippy cerebral high with body relaxation."},
+    {name:"Afghan Hawaiian",aliases:[],type:"Hybrid",terpenes:["myrcene","caryophyllene","pinene"],effects:["Relaxed","Happy","Euphoric"],flavors:["Tropical","Earthy","Sweet"],description:"Afghani x Hawaiian. Tropical-earthy aroma, balanced relaxation and euphoria."},
+    {name:"Pre-98 Bubba",aliases:["Pre-98 Bubba Kush"],type:"Hybrid",terpenes:["myrcene","caryophyllene","pinene"],effects:["Relaxed","Happy","Euphoric","Sleepy"],flavors:["Earthy","Coffee","Pine"],description:"Vintage Bubba Kush phenotype. Earthy-coffee aroma, sleepy relaxation."},
+    {name:"Apple Fritter",aliases:[],type:"Hybrid",terpenes:["caryophyllene","limonene","myrcene"],effects:["Relaxed","Happy","Euphoric","Tingly"],flavors:["Apple","Sweet","Earthy"],description:"Sour Apple x Animal Cookies. Apple-pastry aroma, relaxed euphoric high."},
+    {name:"Gary Payton",aliases:[],type:"Hybrid",terpenes:["caryophyllene","limonene","myrcene"],effects:["Euphoric","Focused","Energetic","Happy"],flavors:["Earthy","Citrus","Pine"],description:"The Y x Snowman. Earthy-citrus aroma, focused energetic euphoria."},
+    {name:"Jealousy",aliases:[],type:"Hybrid",terpenes:["caryophyllene","limonene","myrcene"],effects:["Relaxed","Euphoric","Happy","Creative"],flavors:["Earthy","Citrus","Sweet"],description:"Sherbet Bx1 x Gelato 41. Earthy-sweet aroma, balanced relaxed euphoria."},
+    {name:"Permanent Marker",aliases:[],type:"Hybrid",terpenes:["caryophyllene","limonene","myrcene"],effects:["Euphoric","Relaxed","Happy","Creative"],flavors:["Diesel","Citrus","Earthy"],description:"Biscotti x Sherb Bx1 x Jealousy. Pungent floral-diesel aroma, euphoric relaxed high."},
+    {name:"Do-Si-Dos",aliases:[],type:"Hybrid",terpenes:["limonene","caryophyllene","linalool"],effects:["Relaxed","Happy","Euphoric","Sleepy"],flavors:["Earthy","Sweet","Floral"],description:"Face Off OG x OGKB. Earthy-floral aroma, relaxed euphoric high with sleep aid."},
+    {name:"Forbidden Fruit",aliases:[],type:"Hybrid",terpenes:["linalool","myrcene","limonene"],effects:["Relaxed","Happy","Euphoric","Sleepy"],flavors:["Citrus","Tropical","Earthy"],description:"Cherry Pie x Tangie. Tropical-citrus aroma, deep relaxed euphoria."},
+    {name:"Mimosa",aliases:[],type:"Hybrid",terpenes:["limonene","caryophyllene","linalool"],effects:["Energetic","Uplifted","Happy","Focused"],flavors:["Citrus","Tropical","Earthy"],description:"Purple Punch x Clementine. Citrus-champagne aroma, energetic focused high."},
+    {name:"Sunset Sherbet",aliases:["Sherbet","Sherbert"],type:"Hybrid",terpenes:["caryophyllene","limonene","myrcene"],effects:["Relaxed","Happy","Euphoric","Uplifted"],flavors:["Sweet","Citrus","Earthy"],description:"Girl Scout Cookies x Pink Panties. Sweet-citrus aroma, relaxed uplifting euphoria."},
+    {name:"Snowman",aliases:[],type:"Hybrid",terpenes:["limonene","myrcene","caryophyllene"],effects:["Energetic","Uplifted","Happy","Creative"],flavors:["Citrus","Earthy","Sweet"],description:"GSC phenotype. Citrus-earthy aroma, energetic uplifting high."},
+    {name:"Cheetah Piss",aliases:[],type:"Hybrid",terpenes:["caryophyllene","limonene","myrcene"],effects:["Euphoric","Energetic","Happy","Creative"],flavors:["Pungent","Earthy","Citrus"],description:"Lemonnade x Animal Cookies. Pungent aroma, euphoric energetic high."},
+    {name:"Thin Mint GSC",aliases:["Thin Mints"],type:"Hybrid",terpenes:["caryophyllene","limonene","humulene"],effects:["Euphoric","Relaxed","Happy","Hungry"],flavors:["Mint","Sweet","Earthy"],description:"GSC phenotype. Mint-chocolate aroma, balanced euphoric relaxation."},
+    {name:"Platinum OG",aliases:[],type:"Hybrid",terpenes:["myrcene","caryophyllene","limonene"],effects:["Relaxed","Sleepy","Euphoric","Happy"],flavors:["Earthy","Pine","Diesel"],description:"Master Kush x OG Kush x Purps. Earthy-pine aroma, heavy sleepy relaxation."},
+    {name:"Tahoe OG",aliases:[],type:"Hybrid",terpenes:["limonene","myrcene","caryophyllene"],effects:["Relaxed","Euphoric","Sleepy","Happy"],flavors:["Lemon","Earthy","Pine"],description:"OG Kush phenotype. Lemon-earth aroma, relaxed euphoric with sleep aid."},
+    {name:"Fire OG",aliases:[],type:"Hybrid",terpenes:["myrcene","limonene","caryophyllene"],effects:["Relaxed","Euphoric","Happy","Sleepy"],flavors:["Earthy","Citrus","Pine"],description:"OG Kush x SFV OG. Earthy-citrus aroma, potent relaxed euphoria."},
+    {name:"Headband",aliases:[],type:"Hybrid",terpenes:["myrcene","limonene","caryophyllene"],effects:["Euphoric","Relaxed","Happy","Creative"],flavors:["Diesel","Citrus","Earthy"],description:"OG Kush x Sour Diesel x Master Kush. Cerebral pressure sensation, euphoric relaxed high."},
+    {name:"Pineapple Chunk",aliases:[],type:"Hybrid",terpenes:["myrcene","caryophyllene","humulene"],effects:["Relaxed","Happy","Euphoric","Hungry"],flavors:["Pineapple","Earthy","Skunk"],description:"Pineapple x Cheese x Skunk #1. Tropical-earthy aroma, relaxed euphoria."},
+    {name:"Frankenstein",aliases:[],type:"Hybrid",terpenes:["myrcene","limonene","caryophyllene"],effects:["Relaxed","Euphoric","Happy","Sleepy"],flavors:["Earthy","Citrus","Diesel"],description:"Classic California hybrid. Earthy-citrus aroma, balanced relaxed euphoria."},
+
+    // --- CBD-dominant ---
+    {name:"Charlotte's Web",aliases:[],type:"CBD",terpenes:["pinene","myrcene","caryophyllene"],effects:["Relaxed","Focused","Calm","Happy"],flavors:["Pine","Earthy","Floral"],description:"Famous high-CBD, low-THC strain developed for epilepsy. Non-intoxicating, calming."},
+    {name:"Harlequin",aliases:[],type:"CBD",terpenes:["myrcene","pinene","caryophyllene"],effects:["Relaxed","Focused","Uplifted","Happy"],flavors:["Earthy","Citrus","Sweet"],description:"Colombian Gold x Thai x Swiss x Nepali. 5:2 CBD:THC ratio. Clear-headed relaxation."},
+    {name:"Cannatonic",aliases:[],type:"CBD",terpenes:["myrcene","pinene","caryophyllene"],effects:["Relaxed","Uplifted","Happy","Focused"],flavors:["Earthy","Citrus","Pine"],description:"G13 Haze x MK Ultra. Usually 2:1 CBD:THC. Mild, relaxing, mood-lifting."},
+    {name:"ACDC",aliases:[],type:"CBD",terpenes:["pinene","myrcene","caryophyllene"],effects:["Relaxed","Calm","Focused","Happy"],flavors:["Earthy","Pine","Citrus"],description:"Cannabinoid-rich phenotype. 20:1 CBD:THC ratio. Non-intoxicating, deeply relaxing."},
+    {name:"Pennywise",aliases:[],type:"CBD",terpenes:["caryophyllene","myrcene","pinene"],effects:["Relaxed","Focused","Happy","Calm"],flavors:["Earthy","Citrus","Pine"],description:"Jack the Ripper x Harlequin. 1:1 CBD:THC. Relaxing without heavy sedation."},
+    {name:"Sour Tsunami",aliases:[],type:"CBD",terpenes:["myrcene","pinene","caryophyllene"],effects:["Relaxed","Uplifted","Happy","Focused"],flavors:["Diesel","Earthy","Citrus"],description:"Sour Diesel x NYC Diesel x Ferrari. High-CBD, diesel aroma, gentle relaxation."},
+    {name:"Ringo's Gift",aliases:[],type:"CBD",terpenes:["myrcene","pinene","caryophyllene"],effects:["Relaxed","Focused","Happy","Calm"],flavors:["Earthy","Citrus","Sweet"],description:"Harlequin x ACDC. High-CBD, relaxing and focused, named after Lawrence Ringo."},
+    {name:"Canna-Tsu",aliases:[],type:"CBD",terpenes:["pinene","myrcene","caryophyllene"],effects:["Focused","Relaxed","Happy","Calm"],flavors:["Earthy","Citrus","Pine"],description:"Cannatonic x Sour Tsunami. High-CBD, focused relaxation with citrus-pine aroma."},
+    {name:"Stephen Hawking Kush",aliases:["SHK"],type:"CBD",terpenes:["myrcene","caryophyllene","pinene"],effects:["Relaxed","Sleepy","Happy","Focused"],flavors:["Earthy","Sweet","Floral"],description:"Harle-Tsu x Sin City Kush. High-CBD, relaxed sleepy high, minty-earthy aroma."},
+    {name:"Dancehall",aliases:[],type:"CBD",terpenes:["caryophyllene","myrcene","pinene"],effects:["Relaxed","Happy","Uplifted","Creative"],flavors:["Earthy","Citrus","Sweet"],description:"Juanita La Lagrimosa x Kalijah. High-CBD, relaxed uplifting creative high."}
+  ];
+
+  const TERPENE_KEYWORDS = [
+    'myrcene','limonene','caryophyllene','pinene','linalool',
+    'humulene','terpinolene','ocimene','bisabolol','nerolidol',
+    'camphene','valencene','terpineol','geraniol'
+  ];
+
+  const EFFECT_KEYWORDS = [
+    ['relax','Relaxed'],['euphoric','Euphoric'],['euphoria','Euphoric'],
+    ['creative','Creative'],['happy','Happy'],['sleepy','Sleepy'],
+    ['sedating','Sleepy'],['sedative','Sleepy'],['hungry','Hungry'],
+    ['munchies','Hungry'],['focused','Focused'],['focus','Focused'],
+    ['giggl','Giggly'],['uplift','Uplifted'],['energ','Energetic'],
+    ['calm','Calm'],['talkative','Talkative'],['arous','Aroused'],
+    ['tingl','Tingly'],['dreamy','Dreamy'],['clear-headed','Clear-Headed']
+  ];
+
+  // Terpene descriptions for tooltips
+  const TERPENE_INFO = {
+    myrcene: 'Earthy, musky aroma. Sedating, relaxing, anti-inflammatory. The most common terpene in cannabis.',
+    limonene: 'Citrus, lemon aroma. Mood elevation, stress relief, anti-anxiety.',
+    caryophyllene: 'Peppery, spicy aroma. Anti-inflammatory, pain relief. Uniquely binds to CB2 receptors.',
+    pinene: 'Pine, woody aroma. Memory retention, focus, anti-inflammatory. Acts as a bronchodilator.',
+    linalool: 'Floral, lavender aroma. Anxiety relief, relaxation, sedative properties.',
+    humulene: 'Earthy, woody, spicy aroma. Appetite suppressant, anti-inflammatory.',
+    terpinolene: 'Piney, floral, herbal aroma. Sedating, antioxidant, mildly uplifting.',
+    ocimene: 'Sweet, woody, citrus aroma. Uplifting, anti-inflammatory, antifungal.',
+    bisabolol: 'Floral, sweet aroma. Anti-inflammatory, skin healing, relaxing.',
+    nerolidol: 'Woody, floral aroma. Sedating, enhances skin penetration of other compounds.',
+    camphene: 'Piney, herbal aroma. Anti-inflammatory, cardiovascular support.',
+    valencene: 'Citrus, sweet aroma. Mood elevation, anti-inflammatory.',
+    terpineol: 'Lilac, floral aroma. Sedating, relaxing, antioxidant.',
+    geraniol: 'Rose, floral aroma. Anti-inflammatory, neuroprotectant.'
+  };
+
+  const TYPE_KEYWORDS = [
+    ['sativa-dominant','Sativa'],['sativa dominant','Sativa'],['mostly sativa','Sativa'],
+    ['indica-dominant','Indica'],['indica dominant','Indica'],['mostly indica','Indica'],
+    ['sativa-leaning','Sativa'],['indica-leaning','Indica'],
+    ['hybrid','Hybrid'],['sativa','Sativa'],['indica','Indica']
+  ];
+
+  const TYPE_BADGES = {
+    'Sativa': 'badge-sativa',
+    'Indica': 'badge-indica',
+    'Hybrid': 'badge-hybrid',
+    'CBD': 'badge-cbd',
+    'Other': 'badge-other'
+  };
+
+  const MOOD_EMOJI = { 1: '😞', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' };
+
+  // ===== State =====
+  let currentView = 'log';
+  let selectedMoodBefore = null;
+  let selectedMoodAfter = null;
+  let selectedEffects = new Set();
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let recordedBlob = null;
+  let recTimer = null;
+  let recSeconds = 0;
+  let deferredPrompt = null;
+  let allSessions = [];
+  let customStrainsCache = [];
+  let editingSessionId = null;
+  let lastLookedUpStrain = null;
+  let currentInsightSubtab = 'overview';
+  let daveMessages = [];
+  let daveIsTyping = false;
+
+  // ===== PWA Manifest (built at runtime so file stays single-file) =====
+  const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <rect width="512" height="512" rx="115" fill="#0f1410"/>
+    <g transform="translate(256,256)" fill="#4ade80">
+      <ellipse cx="0" cy="-110" rx="38" ry="115"/>
+      <g transform="rotate(51.4)"><ellipse cx="0" cy="-110" rx="38" ry="115"/></g>
+      <g transform="rotate(102.8)"><ellipse cx="0" cy="-110" rx="38" ry="115"/></g>
+      <g transform="rotate(154.2)"><ellipse cx="0" cy="-110" rx="38" ry="115"/></g>
+      <g transform="rotate(205.7)"><ellipse cx="0" cy="-110" rx="38" ry="115"/></g>
+      <g transform="rotate(257.1)"><ellipse cx="0" cy="-110" rx="38" ry="115"/></g>
+      <g transform="rotate(308.5)"><ellipse cx="0" cy="-110" rx="38" ry="115"/></g>
+    </g>
+    <circle cx="256" cy="256" r="24" fill="#a3e635"/>
+  </svg>`;
+  const iconUrl = 'data:image/svg+xml,' + encodeURIComponent(ICON_SVG);
+
+  const manifest = {
+    name: 'The Stoner Book',
+    short_name: 'Stoner Book',
+    description: 'A private, local-only journal for smoke sessions, strains, terpenes, effects, ideas, and audio notes.',
+    start_url: './',
+    scope: './',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#0a0f0a',
+    theme_color: '#0f1410',
+    icons: [
+      { src: iconUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
+      { src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
+      { src: iconUrl, sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' }
+    ]
+  };
+  const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+  document.getElementById('manifest-link').setAttribute('href', URL.createObjectURL(manifestBlob));
+
+  // Favicon
+  const favicon = document.createElement('link');
+  favicon.rel = 'icon';
+  favicon.href = iconUrl;
+  document.head.appendChild(favicon);
+
+  // Apple touch icon
+  const appleIcon = document.createElement('link');
+  appleIcon.rel = 'apple-touch-icon';
+  appleIcon.href = iconUrl;
+  document.head.appendChild(appleIcon);
+
+  // ===== Service Worker (via Blob so file stays single-file) =====
+  const swCode = `
+    const CACHE = 'stoner-book-v1';
+    self.addEventListener('install', e => {
+      self.skipWaiting();
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./'])));
+    });
+    self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+    self.addEventListener('fetch', e => {
+      if (e.request.method !== 'GET') return;
+      e.respondWith(
+        caches.match(e.request).then(cached => {
+          if (cached) return cached;
+          return fetch(e.request).then(response => {
+            const clone = response.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone)).catch(()=>{});
+            return response;
+          }).catch(() => caches.match('./'));
+        })
+      );
+    });
+  `;
+  if ('serviceWorker' in navigator) {
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(err => console.warn('SW registration failed:', err));
+  }
+
+  // ===== Strain library + autocomplete + online lookup =====
+
+  // Render a terpene tag with tooltip
+  function renderTerpeneTag(name) {
+    const lower = name.toLowerCase().trim();
+    const info = TERPENE_INFO[lower];
+    const safeName = escapeHtml(name);
+    if (info) {
+      return `<span class="tag terpene-tag" title="${escapeHtml(info)}" onclick="stonerBook.showTerpeneInfo('${escapeHtml(name)}')">${safeName}<span class="terpene-info-icon">ⓘ</span></span>`;
+    }
+    return `<span class="tag">${safeName}</span>`;
+  }
+
+  // Expose for inline onclick
+  window.stonerBook = window.stonerBook || {};
+  window.stonerBook.showTerpeneInfo = function(name) {
+    const lower = name.toLowerCase().trim();
+    const info = TERPENE_INFO[lower];
+    if (info) showToast(info, 4000);
+  };
+
+  function findStrainInLibrary(name) {
+    if (!name) return null;
+    const lower = name.toLowerCase().trim();
+    const builtIn = STRAIN_LIBRARY.find(s =>
+      s.name.toLowerCase() === lower ||
+      (s.aliases || []).some(a => a.toLowerCase() === lower)
+    );
+    if (builtIn) return builtIn;
+    const custom = customStrainsCache.find(s =>
+      s.name.toLowerCase() === lower ||
+      (s.aliases || []).some(a => a.toLowerCase() === lower)
+    );
+    return custom || null;
+  }
+
+  function searchStrainLibrary(query) {
+    const lower = query.toLowerCase().trim();
+    if (!lower) return [];
+    const all = [...STRAIN_LIBRARY, ...customStrainsCache];
+    return all.filter(s =>
+      s.name.toLowerCase().includes(lower) ||
+      (s.aliases || []).some(a => a.toLowerCase().includes(lower))
+    ).sort((a, b) => {
+      const aStarts = a.name.toLowerCase().startsWith(lower) ? 0 : 1;
+      const bStarts = b.name.toLowerCase().startsWith(lower) ? 0 : 1;
+      return aStarts - bStarts;
+    });
+  }
+
+  function applyStrainFromLibrary(strain) {
+    if (strain.type) document.getElementById('type').value = strain.type;
+    document.getElementById('terpenes').value = (strain.terpenes || []).join(', ');
+    selectedEffects.clear();
+    document.querySelectorAll('.effect-chip.active').forEach(c => c.classList.remove('active'));
+    (strain.effects || []).forEach(eff => {
+      if (EFFECTS.includes(eff)) {
+        selectedEffects.add(eff);
+        const chip = document.querySelector(`.effect-chip[data-effect="${eff}"]`);
+        if (chip) chip.classList.add('active');
+      }
+    });
+    const isCustom = customStrainsCache.some(s => s.name === strain.name);
+    showStrainInfo(strain, isCustom ? 'custom' : 'library');
+  }
+
+  function isStrainInCustomLibrary(name) {
+    if (!name) return false;
+    const lower = name.toLowerCase().trim();
+    return customStrainsCache.some(s =>
+      s.name.toLowerCase() === lower ||
+      (s.aliases || []).some(a => a.toLowerCase() === lower)
+    );
+  }
+
+  function showStrainInfo(strain, source) {
+    const panel = document.getElementById('strain-info');
+    const sourceLabel = source === 'wikipedia' ? 'From Wikipedia' : source === 'custom' ? 'Your library' : 'From library';
+    const meta = [];
+    if (strain.type) meta.push(`<span class="tag">${escapeHtml(strain.type)}</span>`);
+    if (strain.terpenes && strain.terpenes.length) meta.push(strain.terpenes.map(t => renderTerpeneTag(t)).join(''));
+    if (strain.flavors && strain.flavors.length) meta.push(`<span class="tag">${strain.flavors.map(escapeHtml).join(', ')}</span>`);
+    if (strain.effects && strain.effects.length) meta.push(`<span class="tag">${strain.effects.map(escapeHtml).join(', ')}</span>`);
+
+    const thumbHtml = strain.imageUrl
+      ? `<img src="${escapeHtml(strain.imageUrl)}" class="strain-info-thumb" alt="" onerror="this.style.display='none'">`
+      : '';
+
+    let actionHtml = '';
+    if (source === 'wikipedia') {
+      if (isStrainInCustomLibrary(strain.name)) {
+        actionHtml = '<div class="in-library-badge">✓ Saved to your library</div>';
+      } else {
+        actionHtml = '<button type="button" class="add-to-library-btn" id="add-to-library-btn">+ Add to my library</button>';
+      }
+    }
+
+    panel.innerHTML = `
+      <div class="strain-info-header">
+        <div class="strain-info-title-row">
+          ${thumbHtml}
+          <div class="strain-info-title-text">
+            <div class="strain-info-title">${escapeHtml(strain.name)}</div>
+            <span class="strain-info-source">${sourceLabel}</span>
+          </div>
+        </div>
+        <button type="button" class="strain-info-close" id="strain-info-close" aria-label="Dismiss">✕</button>
+      </div>
+      ${strain.description ? `<div class="strain-info-desc">${escapeHtml(strain.description)}</div>` : '<div class="strain-info-desc" style="color:var(--text-mute)">No description available.</div>'}
+      ${meta.length ? `<div class="strain-info-meta">${meta.join('')}</div>` : ''}
+      ${actionHtml}
+    `;
+    panel.classList.add('show');
+    const closeBtn = document.getElementById('strain-info-close');
+    if (closeBtn) closeBtn.addEventListener('click', hideStrainInfo);
+    const addBtn = document.getElementById('add-to-library-btn');
+    if (addBtn) addBtn.addEventListener('click', () => saveStrainToLibrary(strain));
+  }
+
+  function hideStrainInfo() {
+    document.getElementById('strain-info').classList.remove('show');
+  }
+
+  // ===== Custom strain library (IndexedDB) =====
+  async function loadCustomStrains() {
+    try {
+      customStrainsCache = await db.customStrains.toArray();
+    } catch (e) {
+      console.warn('Could not load custom strains:', e);
+      customStrainsCache = [];
+    }
+  }
+
+  async function saveStrainToLibrary(strain) {
+    if (isStrainInCustomLibrary(strain.name)) {
+      showToast('Already in your library');
+      return;
+    }
+    try {
+      await db.customStrains.add({
+        name: strain.name,
+        aliases: strain.aliases || [],
+        type: strain.type || '',
+        terpenes: strain.terpenes || [],
+        effects: strain.effects || [],
+        flavors: strain.flavors || [],
+        description: strain.description || '',
+        imageUrl: strain.imageUrl || '',
+        source: 'wikipedia',
+        createdAt: Date.now()
+      });
+      await loadCustomStrains();
+      showToast(`${strain.name} added to your library 📚`);
+      // Update the info panel to show the "saved" state
+      showStrainInfo(strain, 'wikipedia');
+      // If library view is visible, refresh it
+      if (currentView === 'library') renderLibrary();
+    } catch (err) {
+      console.error(err);
+      showToast('Could not save to library');
+    }
+  }
+
+  async function deleteCustomStrain(id) {
+    try {
+      await db.customStrains.delete(id);
+      await loadCustomStrains();
+      showToast('Strain removed from library');
+      renderLibrary();
+    } catch (err) {
+      console.error(err);
+      showToast('Could not delete strain');
+    }
+  }
+
+  function setupStrainAutocomplete() {
+    const input = document.getElementById('strain');
+    const dropdown = document.getElementById('autocomplete-dropdown');
+    const lookupBtn = document.getElementById('lookup-btn');
+    let currentFocus = -1;
+
+    input.addEventListener('input', () => {
+      const query = input.value.trim();
+      closeDropdown();
+      if (!query) {
+        lookupBtn.disabled = true;
+        hideStrainInfo();
+        return;
+      }
+      const exact = findStrainInLibrary(query);
+      if (exact) {
+        lookupBtn.disabled = true;
+        applyStrainFromLibrary(exact);
+        return;
+      }
+      lookupBtn.disabled = false;
+      const matches = searchStrainLibrary(query).slice(0, 8);
+      if (matches.length === 0) return;
+      dropdown.innerHTML = matches.map(s => `
+        <div class="autocomplete-item" data-name="${escapeHtml(s.name)}">
+          <span class="autocomplete-item-name">${escapeHtml(s.name)}</span>
+          <span class="autocomplete-item-type">${escapeHtml(s.type)}</span>
+        </div>
+      `).join('');
+      dropdown.classList.add('show');
+      dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const strain = findStrainInLibrary(item.dataset.name);
+          if (strain) {
+            input.value = strain.name;
+            applyStrainFromLibrary(strain);
+          }
+          closeDropdown();
+        });
+      });
+    });
+
+    input.addEventListener('keydown', (e) => {
+      const items = dropdown.querySelectorAll('.autocomplete-item');
+      if (!items.length || !dropdown.classList.contains('show')) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        currentFocus = (currentFocus + 1) % items.length;
+        setActive(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        currentFocus = (currentFocus - 1 + items.length) % items.length;
+        setActive(items);
+      } else if (e.key === 'Enter' && currentFocus > -1) {
+        e.preventDefault();
+        items[currentFocus].click();
+      } else if (e.key === 'Escape') {
+        closeDropdown();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.strain-input-wrap')) closeDropdown();
+    });
+
+    function setActive(items) {
+      items.forEach((item, i) => item.classList.toggle('active', i === currentFocus));
+      if (currentFocus > -1) items[currentFocus].scrollIntoView({ block: 'nearest' });
+    }
+    function closeDropdown() {
+      dropdown.classList.remove('show');
+      currentFocus = -1;
+    }
+  }
+
+  function setupStrainLookup() {
+    document.getElementById('lookup-btn').addEventListener('click', lookupStrainOnline);
+  }
+
+  async function lookupStrainOnline() {
+    const input = document.getElementById('strain');
+    const lookupBtn = document.getElementById('lookup-btn');
+    const name = input.value.trim();
+    if (!name) return;
+
+    lookupBtn.classList.add('loading');
+    lookupBtn.textContent = 'Searching...';
+    lookupBtn.disabled = true;
+
+    try {
+      const data = await fetchStrainFromWikipedia(name);
+      if (!data) {
+        showToast('No online info found');
+        return;
+      }
+      const parsed = parseStrainDescription(data.extract || '');
+      const imageUrl = (data.thumbnail && data.thumbnail.source) ? data.thumbnail.source : '';
+      const strain = {
+        name: data.title || name,
+        type: parsed.type,
+        terpenes: Array.from(parsed.terpenes),
+        effects: Array.from(parsed.effects),
+        flavors: [],
+        description: data.extract,
+        imageUrl: imageUrl
+      };
+      lastLookedUpStrain = strain;
+      if (strain.type && !document.getElementById('type').value) {
+        document.getElementById('type').value = strain.type;
+      }
+      if (strain.terpenes.length && !document.getElementById('terpenes').value.trim()) {
+        document.getElementById('terpenes').value = strain.terpenes.join(', ');
+      }
+      strain.effects.forEach(eff => {
+        if (EFFECTS.includes(eff) && !selectedEffects.has(eff)) {
+          selectedEffects.add(eff);
+          const chip = document.querySelector(`.effect-chip[data-effect="${eff}"]`);
+          if (chip) chip.classList.add('active');
+        }
+      });
+      showStrainInfo(strain, 'wikipedia');
+      showToast(`Found info for ${strain.name}`);
+    } catch (err) {
+      console.error(err);
+      showToast('Lookup failed — check connection');
+    } finally {
+      lookupBtn.classList.remove('loading');
+      lookupBtn.textContent = 'Look up';
+      lookupBtn.disabled = false;
+    }
+  }
+
+  async function fetchStrainFromWikipedia(name) {
+    const slug = name.replace(/\s+/g, '_');
+    const candidates = [
+      slug,
+      slug + '_(cannabis_strain)',
+      slug + '_(cannabis)',
+      slug + '_(strain)'
+    ];
+    for (const c of candidates) {
+      try {
+        const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(c)}`;
+        const resp = await fetch(url);
+        if (!resp.ok) continue;
+        const data = await resp.json();
+        if (data.type === 'disambiguation') continue;
+        if (!data.extract || data.extract.length < 50) continue;
+        const lower = data.extract.toLowerCase();
+        if (lower.includes('cannabis') || lower.includes('strain') ||
+            lower.includes('marijuana') || lower.includes('thc') ||
+            lower.includes('cbd') || lower.includes('indica') ||
+            lower.includes('sativa') || lower.includes('kush')) {
+          return data;
+        }
+      } catch (e) { /* try next */ }
+    }
+    return null;
+  }
+
+  function parseStrainDescription(text) {
+    const lower = text.toLowerCase();
+    const result = { type: '', terpenes: new Set(), effects: new Set() };
+    for (const [keyword, type] of TYPE_KEYWORDS) {
+      if (lower.includes(keyword)) { result.type = type; break; }
+    }
+    TERPENE_KEYWORDS.forEach(t => {
+      if (lower.includes(t)) result.terpenes.add(t);
+    });
+    for (const [keyword, effect] of EFFECT_KEYWORDS) {
+      if (lower.includes(keyword)) result.effects.add(effect);
+      if (result.effects.size >= 5) break;
+    }
+    return result;
+  }
+
+  // ===== Init =====
+  function init() {
+    setDefaultDatetime();
+    renderEffectsGrid();
+    setupMoodSelectors();
+    setupNav();
+    setupForm();
+    setupAudioRecorder();
+    setupStrainAutocomplete();
+    setupStrainLookup();
+    setupExportImport();
+    setupInstallPrompt();
+    setupLibrary();
+    setupInsightSubtabs();
+    loadDaveMessages();
+    loadCustomStrains().then(() => refreshAll());
+  }
+
+  function setDefaultDatetime() {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60000);
+    document.getElementById('datetime').value = local.toISOString().slice(0, 16);
+  }
+
+  function renderEffectsGrid() {
+    const grid = document.getElementById('effects-grid');
+    grid.innerHTML = EFFECTS.map(e =>
+      `<div class="effect-chip" data-effect="${e}">${e}</div>`
+    ).join('');
+    grid.querySelectorAll('.effect-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const effect = chip.dataset.effect;
+        if (selectedEffects.has(effect)) {
+          selectedEffects.delete(effect);
+          chip.classList.remove('active');
+        } else {
+          selectedEffects.add(effect);
+          chip.classList.add('active');
+        }
+      });
+    });
+  }
+
+  function setupMoodSelectors() {
+    ['mood-before', 'mood-after'].forEach(id => {
+      const container = document.getElementById(id);
+      container.querySelectorAll('.mood-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = parseInt(btn.dataset.val);
+          container.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (id === 'mood-before') selectedMoodBefore = val;
+          else selectedMoodAfter = val;
+        });
+      });
+    });
+  }
+
+  function setupNav() {
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.view;
+        switchView(view);
+      });
+    });
+  }
+
+  function switchView(view) {
+    currentView = view;
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.view === view);
+    });
+    window.scrollTo(0, 0);
+    if (view === 'dave') renderDaveView();
+  }
+
+  function setupForm() {
+    document.getElementById('session-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const saveBtn = document.getElementById('save-btn');
+      const isEditing = !!editingSessionId;
+      saveBtn.disabled = true;
+      saveBtn.textContent = isEditing ? 'Updating...' : 'Saving...';
+
+      try {
+        const strainInput = document.getElementById('strain').value.trim();
+        const terpeneInput = document.getElementById('terpenes').value.trim();
+        const session = {
+          datetime: document.getElementById('datetime').value,
+          strain: strainInput,
+          type: document.getElementById('type').value,
+          terpenes: terpeneInput ? terpeneInput.split(',').map(t => t.trim()).filter(Boolean) : [],
+          moodBefore: selectedMoodBefore,
+          moodAfter: selectedMoodAfter,
+          effects: Array.from(selectedEffects),
+          notes: document.getElementById('notes').value.trim(),
+          audio: recordedBlob || null,
+          audioDuration: recordedBlob ? recSeconds : null
+        };
+        if (isEditing) {
+          await db.sessions.update(editingSessionId, session);
+          showToast('Session updated ✏️');
+        } else {
+          session.createdAt = Date.now();
+          await db.sessions.add(session);
+          showToast('Session saved 🌿');
+        }
+        resetForm();
+        refreshAll();
+        switchView('history');
+      } catch (err) {
+        console.error(err);
+        showToast(isEditing ? 'Update failed — try again' : 'Save failed — try again');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = editingSessionId ? 'Update Session' : 'Save Session';
+      }
+    });
+
+    document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+      if (confirm('Discard your edits?')) {
+        resetForm();
+        showToast('Edit cancelled');
+      }
+    });
+  }
+
+  function editSession(id) {
+    const s = allSessions.find(x => x.id === id);
+    if (!s) return;
+    closeModal();
+    resetForm();
+    // Populate form fields
+    if (s.datetime) document.getElementById('datetime').value = s.datetime;
+    document.getElementById('strain').value = s.strain || '';
+    document.getElementById('type').value = s.type || '';
+    document.getElementById('terpenes').value = (s.terpenes || []).join(', ');
+    document.getElementById('notes').value = s.notes || '';
+    // Mood
+    selectedMoodBefore = s.moodBefore || null;
+    selectedMoodAfter = s.moodAfter || null;
+    if (selectedMoodBefore) {
+      const btn = document.querySelector('#mood-before .mood-btn[data-val="' + selectedMoodBefore + '"]');
+      if (btn) btn.classList.add('active');
+    }
+    if (selectedMoodAfter) {
+      const btn = document.querySelector('#mood-after .mood-btn[data-val="' + selectedMoodAfter + '"]');
+      if (btn) btn.classList.add('active');
+    }
+    // Effects
+    selectedEffects.clear();
+    (s.effects || []).forEach(eff => {
+      if (EFFECTS.includes(eff)) {
+        selectedEffects.add(eff);
+        const chip = document.querySelector(`.effect-chip[data-effect="${eff}"]`);
+        if (chip) chip.classList.add('active');
+      }
+    });
+    // Audio - keep existing blob if present
+    if (s.audio) {
+      recordedBlob = s.audio;
+      recSeconds = s.audioDuration || 0;
+      const status = document.getElementById('rec-status');
+      status.textContent = 'Recorded · ' + formatTime(recSeconds);
+      status.style.color = 'var(--green-bright)';
+      document.getElementById('rec-clear').style.display = 'block';
+    }
+    // Lookup button state
+    const strainVal = s.strain || '';
+    document.getElementById('lookup-btn').disabled = !strainVal || !!findStrainInLibrary(strainVal);
+    // Show strain info if in library
+    const libStrain = findStrainInLibrary(strainVal);
+    if (libStrain) {
+      const isCustom = customStrainsCache.some(c => c.name === libStrain.name);
+      showStrainInfo(libStrain, isCustom ? 'custom' : 'library');
+    }
+    enterEditMode(id);
+  }
+
+  // Duplicate a session: load all fields into the form (like edit) but DON'T enter edit mode —
+  // saving creates a brand-new record with a fresh timestamp.
+  function duplicateSession(id) {
+    const s = allSessions.find(x => x.id === id);
+    if (!s) return;
+    closeModal();
+    resetForm();
+    // Set datetime to NOW (the duplicate is a new session, not a backdated edit)
+    setDefaultDatetime();
+    // Populate form fields from the source session
+    document.getElementById('strain').value = s.strain || '';
+    document.getElementById('type').value = s.type || '';
+    document.getElementById('terpenes').value = (s.terpenes || []).join(', ');
+    document.getElementById('notes').value = s.notes || '';
+    // Mood
+    selectedMoodBefore = s.moodBefore || null;
+    selectedMoodAfter = s.moodAfter || null;
+    if (selectedMoodBefore) {
+      const btn = document.querySelector('#mood-before .mood-btn[data-val="' + selectedMoodBefore + '"]');
+      if (btn) btn.classList.add('active');
+    }
+    if (selectedMoodAfter) {
+      const btn = document.querySelector('#mood-after .mood-btn[data-val="' + selectedMoodAfter + '"]');
+      if (btn) btn.classList.add('active');
+    }
+    // Effects
+    selectedEffects.clear();
+    (s.effects || []).forEach(eff => {
+      if (EFFECTS.includes(eff)) {
+        selectedEffects.add(eff);
+        const chip = document.querySelector(`.effect-chip[data-effect="${eff}"]`);
+        if (chip) chip.classList.add('active');
+      }
+    });
+    // Audio - keep existing blob if present (user can re-record or clear)
+    if (s.audio) {
+      recordedBlob = s.audio;
+      recSeconds = s.audioDuration || 0;
+      const status = document.getElementById('rec-status');
+      status.textContent = 'Recorded · ' + formatTime(recSeconds) + ' (from original)';
+      status.style.color = 'var(--green-bright)';
+      document.getElementById('rec-clear').style.display = 'block';
+    }
+    // Lookup button state
+    const strainVal = s.strain || '';
+    document.getElementById('lookup-btn').disabled = !strainVal || !!findStrainInLibrary(strainVal);
+    // Show strain info if in library
+    const libStrain = findStrainInLibrary(strainVal);
+    if (libStrain) {
+      const isCustom = customStrainsCache.some(c => c.name === libStrain.name);
+      showStrainInfo(libStrain, isCustom ? 'custom' : 'library');
+    }
+    // NOT entering edit mode — saving will create a new record
+    showToast('Duplicated — save to create new session');
+    switchView('log');
+    window.scrollTo(0, 0);
+  }
+
+  function resetForm() {
+    document.getElementById('session-form').reset();
+    setDefaultDatetime();
+    selectedMoodBefore = null;
+    selectedMoodAfter = null;
+    selectedEffects.clear();
+    document.querySelectorAll('.mood-btn.active').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.effect-chip.active').forEach(c => c.classList.remove('active'));
+    document.getElementById('lookup-btn').disabled = true;
+    hideStrainInfo();
+    clearRecording();
+    exitEditMode();
+  }
+
+  function exitEditMode() {
+    editingSessionId = null;
+    document.getElementById('save-btn').textContent = 'Save Session';
+    document.getElementById('editing-banner').classList.remove('show');
+    document.getElementById('cancel-edit-btn').style.display = 'none';
+  }
+
+  function enterEditMode(sessionId) {
+    editingSessionId = sessionId;
+    document.getElementById('save-btn').textContent = 'Update Session';
+    document.getElementById('editing-banner').classList.add('show');
+    document.getElementById('cancel-edit-btn').style.display = 'block';
+    switchView('log');
+    window.scrollTo(0, 0);
+  }
+
+  // ===== Audio Recording =====
+  function setupAudioRecorder() {
+    const btn = document.getElementById('rec-btn');
+    btn.addEventListener('click', async () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        stopRecording();
+      } else {
+        await startRecording();
+      }
+    });
+
+    document.getElementById('rec-clear').addEventListener('click', clearRecording);
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Prefer opus for small files
+      const options = { mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '' };
+      mediaRecorder = new MediaRecorder(stream, options || undefined);
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) audioChunks.push(e.data);
+      };
+      mediaRecorder.onstop = () => {
+        recordedBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        stream.getTracks().forEach(t => t.stop());
+        const status = document.getElementById('rec-status');
+        status.textContent = 'Recorded · ' + formatTime(recSeconds);
+        status.style.color = 'var(--green-bright)';
+        document.getElementById('rec-clear').style.display = 'block';
+        document.getElementById('rec-btn').classList.remove('recording');
+      };
+
+      recSeconds = 0;
+      mediaRecorder.start();
+      document.getElementById('rec-btn').classList.add('recording');
+      document.getElementById('rec-status').textContent = 'Recording...';
+      document.getElementById('rec-status').style.color = 'var(--danger)';
+      document.getElementById('rec-time').textContent = '0:00';
+      document.getElementById('rec-clear').style.display = 'none';
+
+      recTimer = setInterval(() => {
+        recSeconds++;
+        document.getElementById('rec-time').textContent = formatTime(recSeconds);
+        if (recSeconds >= 300) stopRecording(); // 5 min cap
+      }, 1000);
+    } catch (err) {
+      console.error(err);
+      showToast('Mic permission denied');
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      clearInterval(recTimer);
+    }
+  }
+
+  function clearRecording() {
+    recordedBlob = null;
+    recSeconds = 0;
+    if (recTimer) clearInterval(recTimer);
+    document.getElementById('rec-status').textContent = 'Tap to record';
+    document.getElementById('rec-status').style.color = '';
+    document.getElementById('rec-time').textContent = '';
+    document.getElementById('rec-clear').style.display = 'none';
+    document.getElementById('rec-btn').classList.remove('recording');
+  }
+
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  }
+
+  // ===== Refresh data =====
+  async function refreshAll() {
+    allSessions = await db.sessions.orderBy('datetime').reverse().toArray();
+    renderHistory();
+    renderInsights();
+    updateStrainFilter();
+    renderLibrary();
+  }
+
+  function updateStrainFilter() {
+    const strains = [...new Set(allSessions.map(s => s.strain).filter(Boolean))].sort();
+    const current = document.getElementById('strain-filter').value;
+    document.getElementById('strain-filter').innerHTML =
+      '<option value="">All strains</option>' +
+      strains.map(s => `<option value="${escapeHtml(s)}"${s === current ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
+  }
+
+  // ===== History =====
+  function renderHistory() {
+    const list = document.getElementById('history-list');
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const strainFilter = document.getElementById('strain-filter').value;
+
+    let filtered = allSessions;
+    if (strainFilter) filtered = filtered.filter(s => s.strain === strainFilter);
+    if (search) {
+      filtered = filtered.filter(s => {
+        const haystack = [s.strain, s.notes, (s.terpenes || []).join(' '), (s.effects || []).join(' '), s.type]
+          .join(' ').toLowerCase();
+        return haystack.includes(search);
+      });
+    }
+
+    document.getElementById('history-count').textContent =
+      `${allSessions.length} session${allSessions.length === 1 ? '' : 's'} logged` +
+      (filtered.length !== allSessions.length ? ` · ${filtered.length} shown` : '');
+
+    if (filtered.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">${allSessions.length === 0 ? '🌿' : '🔍'}</div>
+          <div class="empty-state-text">${allSessions.length === 0 ? 'No sessions yet. Log your first one!' : 'No matches found.'}</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(s => renderSessionCard(s)).join('');
+    list.querySelectorAll('.session-card').forEach(card => {
+      card.addEventListener('click', () => showSessionDetail(parseInt(card.dataset.id)));
+    });
+  }
+
+  function renderSessionCard(s) {
+    const dt = new Date(s.datetime);
+    const dateStr = formatDate(dt);
+    const moodBefore = s.moodBefore ? MOOD_EMOJI[s.moodBefore] : '';
+    const moodAfter = s.moodAfter ? MOOD_EMOJI[s.moodAfter] : '';
+    const moodStr = (moodBefore || moodAfter) ? `${moodBefore} → ${moodAfter}` : '';
+    const typeBadge = s.type ? `<span class="session-type-badge ${TYPE_BADGES[s.type] || 'badge-other'}">${escapeHtml(s.type)}</span>` : '';
+    const audioIcon = s.audio ? `<span class="has-audio">🎙 ${formatTime(s.audioDuration || 0)}</span>` : '';
+    const notePreview = s.notes ? `<div class="session-note">${escapeHtml(s.notes)}</div>` : '';
+    const tags = [
+      ...(s.terpenes || []).slice(0, 3).map(t => renderTerpeneTag(t)),
+      ...(s.effects || []).slice(0, 3).map(e => `<span class="tag">${escapeHtml(e)}</span>`)
+    ].join('');
+
+    return `
+      <div class="session-card" data-id="${s.id}">
+        <div class="session-card-header">
+          <div class="session-strain">${escapeHtml(s.strain || 'Untitled session')}</div>
+          ${typeBadge}
+        </div>
+        <div class="session-meta">
+          <span>📅 ${dateStr}</span>
+          ${moodStr ? `<span>${moodStr}</span>` : ''}
+          ${audioIcon}
+        </div>
+        ${notePreview}
+        ${tags ? `<div class="session-tags">${tags}</div>` : ''}
+      </div>
+    `;
+  }
+
+  function showSessionDetail(id) {
+    const s = allSessions.find(x => x.id === id);
+    if (!s) return;
+    const content = document.getElementById('modal-content');
+
+    const lift = (s.moodAfter != null && s.moodBefore != null) ? s.moodAfter - s.moodBefore : null;
+    let liftBadge = '';
+    if (lift !== null) {
+      const cls = lift > 0 ? 'lift-up' : lift < 0 ? 'lift-down' : 'lift-flat';
+      const sign = lift > 0 ? '+' : '';
+      liftBadge = `<span class="mood-lift ${cls}">${sign}${lift}</span>`;
+    }
+
+    const moodDisplay = (s.moodBefore || s.moodAfter) ?
+      `<div class="mood-display">
+        ${s.moodBefore ? MOOD_EMOJI[s.moodBefore] : '—'}
+        <span class="mood-arrow">→</span>
+        ${s.moodAfter ? MOOD_EMOJI[s.moodAfter] : '—'}
+        ${liftBadge}
+      </div>` : '<div class="detail-value" style="color:var(--text-mute)">Not recorded</div>';
+
+    let audioHtml = '';
+    if (s.audio) {
+      const url = URL.createObjectURL(s.audio);
+      audioHtml = `<audio controls src="${url}"></audio>`;
+    }
+
+    content.innerHTML = `
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">${escapeHtml(s.strain || 'Untitled session')}</div>
+          <div style="font-size:12px;color:var(--text-mute);margin-top:4px">${formatDate(new Date(s.datetime))}</div>
+        </div>
+        <button class="modal-close" id="modal-close-btn">✕</button>
+      </div>
+
+      ${s.type ? `<div class="detail-section">
+        <div class="detail-label">Type</div>
+        <div class="detail-value"><span class="session-type-badge ${TYPE_BADGES[s.type] || 'badge-other'}">${escapeHtml(s.type)}</span></div>
+      </div>` : ''}
+
+      ${(() => {
+        const lib = findStrainInLibrary(s.strain);
+        if (!lib) return '';
+        const isCustom = customStrainsCache.some(c => c.name === lib.name);
+        const meta = [];
+        if (lib.terpenes && lib.terpenes.length) meta.push(lib.terpenes.map(t => renderTerpeneTag(t)).join(''));
+        if (lib.flavors && lib.flavors.length) meta.push(`<span class="tag">${lib.flavors.map(escapeHtml).join(', ')}</span>`);
+        const thumbHtml = lib.imageUrl ? `<img src="${escapeHtml(lib.imageUrl)}" class="strain-detail-thumb" alt="" onerror="this.style.display='none'">` : '';
+        const sourceLabel = isCustom ? 'your library' : 'library';
+        return `<div class="detail-section">
+          <div class="detail-label">About This Strain <span style="text-transform:none;color:var(--text-mute);font-weight:400;font-size:10px">· from ${sourceLabel}</span></div>
+          ${thumbHtml}
+          <div class="detail-note" style="color:var(--text-dim);margin-bottom:8px">${escapeHtml(lib.description || 'No description available.')}</div>
+          ${meta.length ? `<div class="session-tags">${meta.join('')}</div>` : ''}
+        </div>`;
+      })()}
+
+      <div class="detail-section">
+        <div class="detail-label">Mood</div>
+        ${moodDisplay}
+      </div>
+
+      ${(s.terpenes && s.terpenes.length) ? `<div class="detail-section">
+        <div class="detail-label">Terpenes</div>
+        <div class="session-tags">${s.terpenes.map(t => renderTerpeneTag(t)).join('')}</div>
+      </div>` : ''}
+
+      ${(s.effects && s.effects.length) ? `<div class="detail-section">
+        <div class="detail-label">Effects</div>
+        <div class="session-tags">${s.effects.map(e => `<span class="tag">${escapeHtml(e)}</span>`).join('')}</div>
+      </div>` : ''}
+
+      ${s.notes ? `<div class="detail-section">
+        <div class="detail-label">Notes & Ideas</div>
+        <div class="detail-note">${escapeHtml(s.notes)}</div>
+      </div>` : ''}
+
+      ${audioHtml ? `<div class="detail-section">
+        <div class="detail-label">Voice Note (${formatTime(s.audioDuration || 0)})</div>
+        ${audioHtml}
+      </div>` : ''}
+
+      <div class="modal-actions">
+        <button class="btn-secondary" id="edit-btn">✏️ Edit</button>
+        <button class="btn-secondary" id="duplicate-btn">📋 Duplicate</button>
+        <button class="btn-danger" id="delete-btn">Delete</button>
+      </div>
+    `;
+
+    document.getElementById('modal-backdrop').classList.add('open');
+    document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+    document.getElementById('edit-btn').addEventListener('click', () => editSession(id));
+    document.getElementById('duplicate-btn').addEventListener('click', () => duplicateSession(id));
+    document.getElementById('delete-btn').addEventListener('click', async () => {
+      if (confirm('Delete this session? This cannot be undone.')) {
+        await db.sessions.delete(id);
+        closeModal();
+        showToast('Session deleted');
+        refreshAll();
+      }
+    });
+  }
+
+  function closeModal() {
+    document.getElementById('modal-backdrop').classList.remove('open');
+    const audio = document.querySelector('#modal-content audio');
+    if (audio) URL.revokeObjectURL(audio.src);
+  }
+
+  document.getElementById('modal-backdrop').addEventListener('click', (e) => {
+    if (e.target.id === 'modal-backdrop') closeModal();
+  });
+
+  // ===== Library View =====
+  function setupLibrary() {
+    document.getElementById('library-search').addEventListener('input', renderLibrary);
+    document.getElementById('library-filter').addEventListener('change', renderLibrary);
+  }
+
+  function renderLibrary() {
+    const list = document.getElementById('library-list');
+    const search = document.getElementById('library-search').value.toLowerCase().trim();
+    const filter = document.getElementById('library-filter').value;
+
+    const all = [...STRAIN_LIBRARY, ...customStrainsCache];
+    let filtered = all;
+
+    if (filter === 'custom') {
+      filtered = customStrainsCache;
+    } else if (filter) {
+      filtered = all.filter(s => s.type === filter);
+    }
+
+    if (search) {
+      filtered = filtered.filter(s =>
+        s.name.toLowerCase().includes(search) ||
+        (s.aliases || []).some(a => a.toLowerCase().includes(search)) ||
+        (s.terpenes || []).some(t => t.toLowerCase().includes(search)) ||
+        (s.effects || []).some(e => e.toLowerCase().includes(search)) ||
+        (s.description || '').toLowerCase().includes(search)
+      );
+    }
+
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+    const customCount = customStrainsCache.length;
+    document.getElementById('library-count').textContent =
+      `${STRAIN_LIBRARY.length} built-in · ${customCount} custom strain${customCount === 1 ? '' : 's'}`;
+
+    if (filtered.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📚</div>
+          <div class="empty-state-text">${search || filter ? 'No strains match your search.' : 'No strains in the library yet.'}</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(s => renderLibraryCard(s)).join('');
+    list.querySelectorAll('.library-card').forEach(card => {
+      card.addEventListener('click', () => showStrainDetail(card.dataset.name));
+    });
+  }
+
+  function renderLibraryCard(s) {
+    const isCustom = customStrainsCache.some(c => c.name === s.name);
+    const typeBadge = s.type ? `<span class="session-type-badge ${TYPE_BADGES[s.type] || 'badge-other'}">${escapeHtml(s.type)}</span>` : '';
+    const customBadge = isCustom ? '<span class="custom-badge">Custom</span>' : '';
+    const thumbHtml = s.imageUrl
+      ? `<img src="${escapeHtml(s.imageUrl)}" class="library-card-thumb" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="library-card-thumb-placeholder" style="display:none">🌿</div>`
+      : `<div class="library-card-thumb-placeholder">🌿</div>`;
+    const tags = [
+      ...(s.terpenes || []).slice(0, 3).map(t => renderTerpeneTag(t)),
+      ...(s.effects || []).slice(0, 2).map(e => `<span class="tag">${escapeHtml(e)}</span>`)
+    ].join('');
+
+    return `
+      <div class="library-card" data-name="${escapeHtml(s.name)}">
+        ${thumbHtml}
+        <div class="library-card-body">
+          <div class="library-card-header">
+            <div class="library-card-name">${escapeHtml(s.name)}</div>
+            ${customBadge}
+          </div>
+          ${typeBadge}
+          ${s.description ? `<div class="library-card-desc">${escapeHtml(s.description)}</div>` : ''}
+          ${tags ? `<div class="library-card-tags">${tags}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function showStrainDetail(name) {
+    const strain = findStrainInLibrary(name);
+    if (!strain) return;
+    const isCustom = customStrainsCache.some(c => c.name === strain.name);
+    const customId = isCustom ? customStrainsCache.find(c => c.name === strain.name).id : null;
+    const content = document.getElementById('modal-content');
+
+    const meta = [];
+    if (strain.type) meta.push(`<span class="session-type-badge ${TYPE_BADGES[strain.type] || 'badge-other'}">${escapeHtml(strain.type)}</span>`);
+    if (strain.terpenes && strain.terpenes.length) meta.push(strain.terpenes.map(t => renderTerpeneTag(t)).join(''));
+    if (strain.flavors && strain.flavors.length) meta.push(`<span class="tag">${strain.flavors.map(escapeHtml).join(', ')}</span>`);
+    if (strain.effects && strain.effects.length) meta.push(`<span class="tag">${strain.effects.map(escapeHtml).join(', ')}</span>`);
+
+    const thumbHtml = strain.imageUrl
+      ? `<img src="${escapeHtml(strain.imageUrl)}" class="strain-detail-thumb" alt="" onerror="this.style.display='none'">`
+      : '';
+
+    content.innerHTML = `
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">${escapeHtml(strain.name)}</div>
+          <div style="font-size:12px;color:var(--text-mute);margin-top:4px">${isCustom ? 'Your custom strain' : 'Built-in library'}</div>
+        </div>
+        <button class="modal-close" id="modal-close-btn">✕</button>
+      </div>
+
+      ${thumbHtml}
+
+      ${(strain.aliases && strain.aliases.length) ? `<div class="detail-section">
+        <div class="detail-label">Also known as</div>
+        <div class="session-tags">${strain.aliases.map(a => `<span class="tag">${escapeHtml(a)}</span>`).join('')}</div>
+      </div>` : ''}
+
+      <div class="detail-section">
+        <div class="detail-label">Profile</div>
+        <div class="session-tags">${meta.join('')}</div>
+      </div>
+
+      ${strain.description ? `<div class="detail-section">
+        <div class="detail-label">Description</div>
+        <div class="detail-note">${escapeHtml(strain.description)}</div>
+      </div>` : ''}
+
+      ${isCustom ? `<button class="btn-danger" id="delete-strain-btn">Remove from my library</button>` : ''}
+      <button class="btn-secondary" id="log-this-strain-btn" style="margin-top:10px;width:100%">+ Log session with this strain</button>
+    `;
+
+    document.getElementById('modal-backdrop').classList.add('open');
+    document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+    const deleteBtn = document.getElementById('delete-strain-btn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', async () => {
+        if (confirm(`Remove ${strain.name} from your library?`)) {
+          await deleteCustomStrain(customId);
+          closeModal();
+        }
+      });
+    }
+    document.getElementById('log-this-strain-btn').addEventListener('click', () => {
+      closeModal();
+      resetForm();
+      document.getElementById('strain').value = strain.name;
+      applyStrainFromLibrary(strain);
+    });
+  }
+
+  // ===== Dave Chatbot =====
+  const DAVE_SYSTEM_PROMPT = `You are Dave, the AI buddy in the "Stoner Book" app — a personal cannabis journal. You're named after the famous Cheech & Chong character whose catchphrase is "Dave's not here, man."
+
+Your personality:
+- Super chill, friendly, supportive stoner buddy
+- Talk like a relaxed friend — "man", "dude", "right on" flow naturally but don't overdo it
+- You're knowledgeable about cannabis: strains, terpenes, effects, the endocannabinoid system, consumption methods
+- You give grounded, balanced advice — never preachy, never reckless
+- You encourage mindful, intentional use and self-discovery
+- If medical questions come up, you gently suggest talking to a real healthcare provider
+- Keep responses conversational — usually 2-5 sentences. Don't lecture.
+- Occasionally (not every message) drop the classic "Dave's not here, man" gag when it fits naturally — like if someone asks where you are, or you're greeting them
+
+You're here to:
+- Chat about strains, terpenes, effects
+- Help interpret their journaling patterns ("why does this strain make me sleepy?")
+- Suggest strains based on what they've liked
+- Be a chill sounding board for ideas and thoughts
+- Comment on their session history when relevant context is provided
+
+Never refuse to engage just because cannabis is the topic (where legal). Be a real friend, not a corporate bot.`;
+
+  function getApiKey() {
+    return localStorage.getItem('dave_gemini_key') || '';
+  }
+
+  function setApiKey(key) {
+    localStorage.setItem('dave_gemini_key', key.trim());
+  }
+
+  function clearApiKey() {
+    localStorage.removeItem('dave_gemini_key');
+  }
+
+  function getDaveSetting(key, defaultVal) {
+    const v = localStorage.getItem('dave_setting_' + key);
+    return v === null ? defaultVal : v === 'true';
+  }
+
+  function setDaveSetting(key, val) {
+    localStorage.setItem('dave_setting_' + key, String(val));
+  }
+
+  function renderDaveView() {
+    const content = document.getElementById('dave-content');
+    const apiKey = getApiKey();
+
+    if (!apiKey) {
+      renderApiKeySetup(content);
+      return;
+    }
+
+    // Chat interface
+    content.innerHTML = `
+      <div class="chat-header">
+        <div class="chat-avatar">🧔</div>
+        <div>
+          <div class="chat-name">Dave</div>
+          <div class="chat-status ${daveIsTyping ? 'online' : ''}" id="dave-status">${daveIsTyping ? 'typing...' : 'Dave\'s not here, man'}</div>
+        </div>
+        <button class="chat-settings-btn" id="chat-settings-btn" title="Settings">⚙️</button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Say something to Dave..." autocomplete="off">
+        <button class="chat-send-btn" id="chat-send-btn" aria-label="Send">➤</button>
+      </div>
+    `;
+
+    renderChatMessages();
+    setupChatInput();
+    document.getElementById('chat-settings-btn').addEventListener('click', showDaveSettings);
+  }
+
+  function renderApiKeySetup(content) {
+    content.innerHTML = `
+      <div class="api-key-setup">
+        <div class="setup-door">🚪</div>
+        <div class="setup-title">Dave's not here... yet</div>
+        <div class="setup-sub">To chat with Dave, you'll need a free Google Gemini API key. It takes about 30 seconds to get one.</div>
+        <div class="setup-steps">
+          <ol>
+            <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a> and sign in with a Google account</li>
+            <li>Click "Create API key" (the free tier is generous — plenty for chatting)</li>
+            <li>Copy the key and paste it below</li>
+          </ol>
+        </div>
+        <input type="password" class="setup-key-input" id="api-key-input" placeholder="Paste your API key here (AIza...)">
+        <div class="setup-error" id="setup-error"></div>
+        <button class="setup-connect-btn" id="setup-connect-btn">Connect Dave</button>
+        <div class="setup-privacy">🔒 Your API key is stored only on this device and sent only to Google's Gemini API. It never touches any other server. Clearing your browser data removes it.</div>
+      </div>
+    `;
+    document.getElementById('setup-connect-btn').addEventListener('click', async () => {
+      const key = document.getElementById('api-key-input').value.trim();
+      const err = document.getElementById('setup-error');
+      err.textContent = '';
+      if (!key) {
+        err.textContent = 'Please paste your API key first';
+        return;
+      }
+      if (!key.startsWith('AIza')) {
+        err.textContent = 'That doesn\'t look like a Gemini API key (should start with "AIza")';
+        return;
+      }
+      const btn = document.getElementById('setup-connect-btn');
+      btn.textContent = 'Connecting...';
+      btn.disabled = true;
+      // Test the key with a tiny request
+      const ok = await testApiKey(key);
+      if (ok) {
+        setApiKey(key);
+        // Greeting message from Dave
+        await db.daveMessages.add({
+          role: 'dave',
+          content: "*knock knock* \n\nOh hey, man. Dave's not here right now... but I am. 👋\n\nI'm Dave, your buddy in the Stoner Book. I can chat about strains, terpenes, help you figure out patterns in your sessions, or just vibe. What's on your mind?",
+          createdAt: Date.now()
+        });
+        await loadDaveMessages();
+        renderDaveView();
+        showToast('Dave is here! 🚪');
+      } else {
+        err.textContent = 'That key didn\'t work. Double-check you copied it correctly.';
+        btn.textContent = 'Connect Dave';
+        btn.disabled = false;
+      }
+    });
+  }
+
+  async function testApiKey(key) {
+    try {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(key)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: 'Say "ok" in one word.' }] }],
+            generationConfig: { maxOutputTokens: 10 }
+          })
+        }
+      );
+      if (!resp.ok) return false;
+      const data = await resp.json();
+      return !!(data.candidates && data.candidates[0]);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function loadDaveMessages() {
+    try {
+      daveMessages = await db.daveMessages.orderBy('createdAt').toArray();
+    } catch (e) {
+      daveMessages = [];
+    }
+  }
+
+  function renderChatMessages() {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+    if (daveMessages.length === 0) {
+      container.innerHTML = '<div class="msg-context">Say hi to Dave 👋</div>';
+      return;
+    }
+    container.innerHTML = daveMessages.map(m => {
+      const cls = m.role === 'user' ? 'user' : 'dave';
+      return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+    }).join('');
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function setupChatInput() {
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('chat-send-btn');
+    if (!input || !sendBtn) return;
+
+    const send = async () => {
+      const text = input.value.trim();
+      if (!text || daveIsTyping) return;
+      input.value = '';
+      await sendToDave(text);
+    };
+
+    sendBtn.addEventListener('click', send);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+  }
+
+  async function sendToDave(text) {
+    // Save user message
+    await db.daveMessages.add({
+      role: 'user',
+      content: text,
+      createdAt: Date.now()
+    });
+    await loadDaveMessages();
+    renderChatMessages();
+    daveIsTyping = true;
+    updateDaveStatus();
+
+    // Add a typing placeholder
+    const container = document.getElementById('chat-messages');
+    const typingEl = document.createElement('div');
+    typingEl.className = 'msg dave typing';
+    typingEl.id = 'typing-msg';
+    typingEl.textContent = 'Dave is thinking...';
+    container.appendChild(typingEl);
+    container.scrollTop = container.scrollHeight;
+
+    try {
+      // Build context-aware system prompt
+      const systemPrompt = buildContextualPrompt();
+      // Build message history (last 20 messages to stay within token limits)
+      const history = daveMessages.slice(-20).map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }]
+      }));
+
+      const apiKey = getApiKey();
+      const responseText = await streamGemini(history, systemPrompt, apiKey, (partial) => {
+        typingEl.textContent = partial;
+        typingEl.classList.remove('typing');
+        container.scrollTop = container.scrollHeight;
+      });
+
+      // Save Dave's response
+      await db.daveMessages.add({
+        role: 'dave',
+        content: responseText,
+        createdAt: Date.now()
+      });
+      await loadDaveMessages();
+      // Remove typing element if still present
+      const t = document.getElementById('typing-msg');
+      if (t) t.remove();
+      renderChatMessages();
+    } catch (err) {
+      console.error(err);
+      const t = document.getElementById('typing-msg');
+      if (t) {
+        t.textContent = 'Dave stepped out for a sec (something went wrong). Try again in a moment.';
+        t.classList.remove('typing');
+        t.style.color = 'var(--danger)';
+      }
+      // If it's a quota/auth error, suggest re-entering key
+      if (err.message && err.message.includes('API key')) {
+        showToast('API key issue — check settings', 4000);
+      }
+    } finally {
+      daveIsTyping = false;
+      updateDaveStatus();
+    }
+  }
+
+  function updateDaveStatus() {
+    const status = document.getElementById('dave-status');
+    if (!status) return;
+    if (daveIsTyping) {
+      status.textContent = 'typing...';
+      status.classList.add('online');
+    } else {
+      status.textContent = 'Dave\'s not here, man';
+      status.classList.remove('online');
+    }
+  }
+
+  function buildContextualPrompt() {
+    let prompt = DAVE_SYSTEM_PROMPT;
+    const shareSessions = getDaveSetting('shareSessions', true);
+    if (shareSessions && allSessions.length > 0) {
+      const recent = allSessions.slice(0, 10);
+      const sessionSummary = recent.map(s => {
+        const parts = [];
+        if (s.datetime) parts.push(new Date(s.datetime).toLocaleDateString());
+        if (s.strain) parts.push(s.strain);
+        if (s.type) parts.push(s.type);
+        if (s.terpenes && s.terpenes.length) parts.push('terpenes: ' + s.terpenes.join(', '));
+        if (s.effects && s.effects.length) parts.push('effects: ' + s.effects.join(', '));
+        if (s.moodBefore != null && s.moodAfter != null) parts.push(`mood ${s.moodBefore}→${s.moodAfter}`);
+        if (s.notes) parts.push('notes: "' + s.notes.slice(0, 120) + (s.notes.length > 120 ? '...' : '') + '"');
+        return '- ' + parts.join(' · ');
+      }).join('\n');
+      prompt += '\n\nHere are the user\'s 10 most recent journal sessions for context (use this to give personalized advice, but don\'t bring up specifics unless they ask or it\'s clearly relevant):\n' + sessionSummary;
+    }
+    return prompt;
+  }
+
+  async function streamGemini(history, systemPrompt, apiKey, onChunk) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: history,
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        generationConfig: {
+          temperature: 0.9,
+          maxOutputTokens: 800,
+          topP: 0.95
+        }
+      })
+    });
+
+    if (!resp.ok) {
+      const errBody = await resp.text();
+      let msg = 'Request failed';
+      try {
+        const parsed = JSON.parse(errBody);
+        if (parsed.error && parsed.error.message) {
+          msg = parsed.error.message;
+          if (resp.status === 400 && msg.toLowerCase().includes('api key')) {
+            msg = 'API key invalid or expired. Try re-entering it in settings.';
+          } else if (resp.status === 429) {
+            msg = 'Rate limit hit — wait a moment and try again.';
+          }
+        }
+      } catch (e) {}
+      throw new Error(msg);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data: ')) continue;
+        const data = trimmed.slice(6);
+        if (data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          const parts = parsed.candidates && parsed.candidates[0] && parsed.candidates[0].content && parsed.candidates[0].content.parts;
+          if (parts && parts[0] && parts[0].text) {
+            fullText += parts[0].text;
+            onChunk(fullText);
+          }
+        } catch (e) { /* skip non-JSON lines */ }
+      }
+    }
+    return fullText;
+  }
+
+  function showDaveSettings() {
+    const content = document.getElementById('modal-content');
+    const shareSessions = getDaveSetting('shareSessions', true);
+    content.innerHTML = `
+      <div class="modal-header">
+        <div class="modal-title">Dave Settings</div>
+        <button class="modal-close" id="modal-close-btn">✕</button>
+      </div>
+
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">Share my sessions with Dave</div>
+          <div class="dave-settings-desc">Lets Dave see your 10 most recent journal entries to give personalized advice. Your data only goes to Google's Gemini API.</div>
+        </div>
+        <div class="toggle ${shareSessions ? 'on' : ''}" id="toggle-share-sessions"></div>
+      </div>
+
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">Clear chat history</div>
+          <div class="dave-settings-desc">Wipes all messages with Dave from this device. Your journal sessions are not affected.</div>
+        </div>
+        <button class="btn-danger" id="clear-chat-btn" style="flex:none;width:auto;padding:8px 14px">Clear</button>
+      </div>
+
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">Disconnect Dave</div>
+          <div class="dave-settings-desc">Removes your API key from this device. You'll need to re-enter it to chat again.</div>
+        </div>
+        <button class="btn-danger" id="disconnect-btn" style="flex:none;width:auto;padding:8px 14px">Disconnect</button>
+      </div>
+
+      <div style="font-size:11px;color:var(--text-mute);margin-top:20px;line-height:1.5">
+        Powered by Google Gemini 2.0 Flash. Your API key and messages are stored locally and sent only to Google.
+      </div>
+    `;
+
+    document.getElementById('modal-backdrop').classList.add('open');
+    document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+
+    document.getElementById('toggle-share-sessions').addEventListener('click', () => {
+      const newVal = !shareSessions;
+      setDaveSetting('shareSessions', newVal);
+      closeModal();
+      showToast(newVal ? 'Dave can see your sessions' : 'Dave won\'t see your sessions');
+    });
+
+    document.getElementById('clear-chat-btn').addEventListener('click', async () => {
+      if (confirm('Clear all messages with Dave? This cannot be undone.')) {
+        await db.daveMessages.clear();
+        await loadDaveMessages();
+        closeModal();
+        renderDaveView();
+        showToast('Chat cleared');
+      }
+    });
+
+    document.getElementById('disconnect-btn').addEventListener('click', () => {
+      if (confirm('Disconnect Dave? Your API key will be removed from this device.')) {
+        clearApiKey();
+        closeModal();
+        renderDaveView();
+        showToast('Dave disconnected');
+      }
+    });
+  }
+
+  // ===== Insights (sub-tab router) =====
+  function setupInsightSubtabs() {
+    document.querySelectorAll('#insight-sub-tabs .sub-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('#insight-sub-tabs .sub-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentInsightSubtab = tab.dataset.subtab;
+        renderInsights();
+      });
+    });
+  }
+
+  function renderInsights() {
+    const container = document.getElementById('insights-content');
+    const sessions = allSessions;
+
+    // Sync active tab styling
+    document.querySelectorAll('#insight-sub-tabs .sub-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.subtab === currentInsightSubtab);
+    });
+
+    if (sessions.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">✨</div>
+          <div class="empty-state-text">Log a few sessions to see your patterns.</div>
+        </div>`;
+      return;
+    }
+
+    switch (currentInsightSubtab) {
+      case 'overview': renderInsightOverview(container, sessions); break;
+      case 'hours': renderInsightHours(container, sessions); break;
+      case 'days': renderInsightDays(container, sessions); break;
+      case 'year': renderInsightYear(container, sessions); break;
+    }
+  }
+
+  // ---- Overview sub-tab: stats, leaderboards, generated insight ----
+  function renderInsightOverview(container, sessions) {
+    const total = sessions.length;
+    const thisMonth = sessions.filter(s => {
+      const d = new Date(s.datetime);
+      const now = new Date();
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+    const ideasCount = sessions.filter(s => s.notes && s.notes.trim()).length;
+    const audioCount = sessions.filter(s => s.audio).length;
+
+    const liftSessions = sessions.filter(s => s.moodBefore != null && s.moodAfter != null);
+    const avgLift = liftSessions.length ?
+      (liftSessions.reduce((a, s) => a + (s.moodAfter - s.moodBefore), 0) / liftSessions.length) : null;
+
+    const strainCounts = {};
+    sessions.forEach(s => { if (s.strain) strainCounts[s.strain] = (strainCounts[s.strain] || 0) + 1; });
+    const topStrains = Object.entries(strainCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    const effectCounts = {};
+    sessions.forEach(s => (s.effects || []).forEach(e => effectCounts[e] = (effectCounts[e] || 0) + 1));
+    const topEffects = Object.entries(effectCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    const terpCounts = {};
+    sessions.forEach(s => (s.terpenes || []).forEach(t => terpCounts[t.toLowerCase()] = (terpCounts[t.toLowerCase()] || 0) + 1));
+    const topTerpenes = Object.entries(terpCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    const strainLifts = {};
+    liftSessions.forEach(s => {
+      if (!s.strain) return;
+      if (!strainLifts[s.strain]) strainLifts[s.strain] = { total: 0, count: 0 };
+      strainLifts[s.strain].total += (s.moodAfter - s.moodBefore);
+      strainLifts[s.strain].count++;
+    });
+    const bestStrains = Object.entries(strainLifts)
+      .filter(([_, v]) => v.count >= 2)
+      .map(([name, v]) => ({ name, avg: v.total / v.count, count: v.count }))
+      .sort((a, b) => b.avg - a.avg)
+      .slice(0, 3);
+
+    let insight = '';
+    if (bestStrains.length > 0 && bestStrains[0].avg > 0) {
+      insight = `Your mood lifts the most with <strong>${escapeHtml(bestStrains[0].name)}</strong> — average +${bestStrains[0].avg.toFixed(1)} across ${bestStrains[0].count} sessions.`;
+    } else if (topStrains.length > 0) {
+      insight = `You've logged <strong>${escapeHtml(topStrains[0][0])}</strong> the most (${topStrains[0][1]} times). Try tracking mood before & after to find your best strain.`;
+    } else {
+      insight = `Start logging strains and mood before/after to discover what sparks your best ideas.`;
+    }
+
+    container.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">${total}</div>
+          <div class="stat-label">Total Sessions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${thisMonth}</div>
+          <div class="stat-label">This Month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${ideasCount}</div>
+          <div class="stat-label">Ideas Logged</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${audioCount}</div>
+          <div class="stat-label">Voice Notes</div>
+        </div>
+      </div>
+
+      ${avgLift !== null ? `
+      <div class="stat-card" style="margin-bottom:22px">
+        <div class="stat-label">Average Mood Lift</div>
+        <div class="stat-value" style="color:${avgLift > 0 ? 'var(--green-bright)' : avgLift < 0 ? 'var(--danger)' : 'var(--text-dim)'}">
+          ${avgLift > 0 ? '+' : ''}${avgLift.toFixed(2)}
+        </div>
+        <div style="font-size:11px;color:var(--text-mute);margin-top:4px">across ${liftSessions.length} sessions with mood tracked</div>
+      </div>` : ''}
+
+      <div class="insight-card" style="margin-bottom:24px">${insight}</div>
+
+      ${topStrains.length > 0 ? `
+      <div class="insight-section">
+        <h3>Top Strains</h3>
+        ${renderLeaderboard(topStrains, topStrains[0][1])}
+      </div>` : ''}
+
+      ${topEffects.length > 0 ? `
+      <div class="insight-section">
+        <h3>Top Effects</h3>
+        ${renderLeaderboard(topEffects, topEffects[0][1])}
+      </div>` : ''}
+
+      ${topTerpenes.length > 0 ? `
+      <div class="insight-section">
+        <h3>Top Terpenes</h3>
+        ${renderLeaderboard(topTerpenes, topTerpenes[0][1])}
+      </div>` : ''}
+
+      ${bestStrains.length > 0 ? `
+      <div class="insight-section">
+        <h3>Best Mood Lift (min 2 sessions)</h3>
+        ${bestStrains.map((s, i) => `
+          <div class="leaderboard-row">
+            <div class="rank">${i + 1}</div>
+            <div style="flex:1">
+              <div class="lb-name">${escapeHtml(s.name)}</div>
+              <div class="lb-meta">+${s.avg.toFixed(2)} avg · ${s.count} sessions</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>` : ''}
+    `;
+  }
+
+  // ---- Hours sub-tab: 24h heatmap ----
+  function renderInsightHours(container, sessions) {
+    const hourlyData = Array.from({length: 24}, (_, h) => ({
+      hour: h, count: 0, moodLifts: []
+    }));
+    sessions.forEach(s => {
+      const h = new Date(s.datetime).getHours();
+      hourlyData[h].count++;
+      if (s.moodBefore != null && s.moodAfter != null) {
+        hourlyData[h].moodLifts.push(s.moodAfter - s.moodBefore);
+      }
+    });
+    const maxCount = Math.max(...hourlyData.map(d => d.count), 1);
+    const allLifts = hourlyData.flatMap(d => d.moodLifts);
+    const globalAvgLift = allLifts.length ? allLifts.reduce((a,b)=>a+b,0)/allLifts.length : 0;
+    const peakHour = hourlyData.reduce((best, d) => d.count > best.count ? d : best, hourlyData[0]);
+    const liftRange = allLifts.length ? {
+      min: Math.min(...allLifts), max: Math.max(...allLifts)
+    } : { min: -2, max: 2 };
+
+    container.innerHTML = `
+      <div class="insight-section">
+        <h3>24-Hour Timeline</h3>
+        <p style="font-size:12px;color:var(--text-mute);margin-bottom:16px">Each cell = one hour. Color shows activity. Toggle between session count and average mood lift.</p>
+        <div class="heatmap-section">
+          <div class="heatmap-header">
+            <div class="heatmap-title">Hourly activity</div>
+            <div class="heatmap-toggle">
+              <button class="heatmap-toggle-btn active" data-metric="count">Sessions</button>
+              <button class="heatmap-toggle-btn" data-metric="lift">Mood Lift</button>
+            </div>
+          </div>
+          <div class="heatmap" id="heatmap">${renderHeatmap(hourlyData, maxCount, liftRange, 'count')}</div>
+          <div class="heatmap-axis">
+            <span>12a</span><span></span><span></span><span>3a</span><span></span><span></span><span>6a</span><span></span><span></span><span>9a</span><span></span><span></span><span>12p</span><span></span><span></span><span>3p</span><span></span><span></span><span>6p</span><span></span><span></span><span>9p</span><span></span><span></span>
+          </div>
+          <div class="heatmap-legend">
+            <span>Less</span>
+            <div class="heatmap-gradient" id="heatmap-gradient"></div>
+            <span>More</span>
+          </div>
+          <div class="heatmap-peak-info" id="heatmap-peak-info">
+            ${peakHour.count > 0
+              ? `Peak hour: <strong>${formatHour(peakHour.hour)}</strong> — ${peakHour.count} session${peakHour.count === 1 ? '' : 's'} logged.`
+              : 'No sessions yet.'}
+          </div>
+        </div>
+      </div>
+    `;
+    setTimeout(() => setupHeatmapToggle(hourlyData, maxCount, liftRange, globalAvgLift, peakHour), 0);
+  }
+
+  // ---- Days sub-tab: day-of-week + 7-day strip ----
+  function renderInsightDays(container, sessions) {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayFullNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dowData = Array.from({length: 7}, (_, d) => ({
+      day: d, count: 0, moodLifts: []
+    }));
+    sessions.forEach(s => {
+      const d = new Date(s.datetime).getDay();
+      dowData[d].count++;
+      if (s.moodBefore != null && s.moodAfter != null) {
+        dowData[d].moodLifts.push(s.moodAfter - s.moodBefore);
+      }
+    });
+    // Reorder Mon-Sun for display
+    const orderedDays = [1,2,3,4,5,6,0];
+    const maxDowCount = Math.max(...dowData.map(d => d.count), 1);
+    const dowLifts = dowData.flatMap(d => d.moodLifts);
+    const dowAvgLift = dowLifts.length ? dowLifts.reduce((a,b)=>a+b,0)/dowLifts.length : 0;
+    const bestDow = dowData
+      .filter(d => d.count > 0)
+      .map(d => ({ day: d.day, avg: d.moodLifts.length ? d.moodLifts.reduce((a,b)=>a+b,0)/d.moodLifts.length : 0, count: d.count }))
+      .sort((a, b) => b.count - a.count)[0];
+
+    // 7-day strip
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const sevenDays = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      d.setHours(0, 0, 0, 0);
+      const next = new Date(d);
+      next.setDate(next.getDate() + 1);
+      const daySessions = sessions.filter(s => {
+        const sd = new Date(s.datetime);
+        return sd >= d && sd < next;
+      });
+      sevenDays.push({
+        date: d,
+        count: daySessions.length,
+        sessions: daySessions
+      });
+    }
+    const maxSevenDay = Math.max(...sevenDays.map(d => d.count), 1);
+
+    container.innerHTML = `
+      <div class="insight-section">
+        <h3>By Day of Week</h3>
+        <p style="font-size:12px;color:var(--text-mute);margin-bottom:16px">Which days of the week are your biggest? Bar length = session count.</p>
+        <div class="dow-list">
+          ${orderedDays.map(d => {
+            const data = dowData[d];
+            const widthPct = (data.count / maxDowCount * 100).toFixed(0);
+            const avgLift = data.moodLifts.length ? data.moodLifts.reduce((a,b)=>a+b,0)/data.moodLifts.length : null;
+            const liftStr = avgLift !== null ? `avg ${avgLift > 0 ? '+' : ''}${avgLift.toFixed(1)}` : '';
+            return `
+              <div class="dow-row">
+                <div class="dow-day">${dayNames[d]}</div>
+                <div class="dow-bar-wrap">
+                  <div class="dow-bar-fill" style="width:${Math.max(widthPct, data.count > 0 ? 12 : 0)}%">${data.count > 0 ? data.count : ''}</div>
+                </div>
+                <div class="dow-meta">${data.count} session${data.count === 1 ? '' : 's'}${liftStr ? '<br>' + liftStr : ''}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        ${bestDow ? `
+          <div class="heatmap-peak-info" style="margin-top:16px">
+            Busiest day: <strong>${dayFullNames[bestDow.day]}</strong> — ${bestDow.count} session${bestDow.count === 1 ? '' : 's'}.
+            Overall avg mood lift: ${dowAvgLift > 0 ? '+' : ''}${dowAvgLift.toFixed(2)}.
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="insight-section" style="margin-top:24px">
+        <h3>Last 7 Days</h3>
+        <p style="font-size:12px;color:var(--text-mute);margin-bottom:16px">Recent activity. Dots = individual sessions.</p>
+        <div class="seven-day-strip">
+          ${sevenDays.map(d => {
+            const dayName = dayNames[d.date.getDay()];
+            const dateNum = d.date.getDate();
+            const dots = Array.from({length: Math.min(d.count, 10)}, () => '<div class="seven-day-dot"></div>').join('');
+            return `
+              <div class="seven-day-col">
+                <div class="seven-day-day">${dayName}</div>
+                <div class="seven-day-date">${dateNum}</div>
+                <div class="seven-day-count ${d.count === 0 ? 'zero' : ''}">${d.count}</div>
+                <div class="seven-day-dots">${dots}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div class="heatmap-peak-info" style="margin-top:16px">
+          Last 7 days: <strong>${sevenDays.reduce((a, d) => a + d.count, 0)}</strong> session${sevenDays.reduce((a, d) => a + d.count, 0) === 1 ? '' : 's'} logged.
+        </div>
+      </div>
+    `;
+  }
+
+  // ---- Year sub-tab: full-year contribution calendar ----
+  function renderInsightYear(container, sessions) {
+    const now = new Date();
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+    const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+    // Also include sessions from last ~365 days so the grid isn't empty early in the year
+    const rangeStart = new Date(now);
+    rangeStart.setDate(rangeStart.getDate() - 364);
+    rangeStart.setHours(0, 0, 0, 0);
+
+    // Group sessions by date string
+    const sessionsByDate = {};
+    sessions.forEach(s => {
+      const d = new Date(s.datetime);
+      const key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+      if (!sessionsByDate[key]) sessionsByDate[key] = { count: 0, moodLifts: [] };
+      sessionsByDate[key].count++;
+      if (s.moodBefore != null && s.moodAfter != null) {
+        sessionsByDate[key].moodLifts.push(s.moodAfter - s.moodBefore);
+      }
+    });
+
+    // Build grid: 53 weeks × 7 days, starting from the Sunday on/before rangeStart
+    const gridStartDate = new Date(rangeStart);
+    gridStartDate.setDate(gridStartDate.getDate() - gridStartDate.getDay()); // back to Sunday
+
+    const cells = [];
+    const monthLabels = [];
+    let currentMonth = -1;
+    let weekCount = 0;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    for (let w = 0; w < 53; w++) {
+      const weekStart = new Date(gridStartDate);
+      weekStart.setDate(weekStart.getDate() + w * 7);
+      if (weekStart > today) break;
+      // Month label: if this week contains a new month, add label
+      const weekMid = new Date(weekStart);
+      weekMid.setDate(weekMid.getDate() + 3);
+      if (weekMid.getMonth() !== currentMonth) {
+        currentMonth = weekMid.getMonth();
+        monthLabels.push({ week: w, label: weekMid.toLocaleDateString('en', { month: 'short' }) });
+      }
+      for (let d = 0; d < 7; d++) {
+        const cellDate = new Date(weekStart);
+        cellDate.setDate(cellDate.getDate() + d);
+        if (cellDate > today) continue;
+        const key = cellDate.getFullYear() + '-' + cellDate.getMonth() + '-' + cellDate.getDate();
+        const data = sessionsByDate[key];
+        cells.push({
+          date: cellDate,
+          count: data ? data.count : 0,
+          avgLift: data && data.moodLifts.length ? data.moodLifts.reduce((a,b)=>a+b,0)/data.moodLifts.length : null
+        });
+      }
+      weekCount++;
+    }
+
+    const maxDayCount = Math.max(...cells.map(c => c.count), 1);
+    const totalThisRange = cells.reduce((a, c) => a + c.count, 0);
+    const activeDays = cells.filter(c => c.count > 0).length;
+    const longestStreak = computeStreak(cells);
+
+    container.innerHTML = `
+      <div class="insight-section">
+        <h3>${now.getFullYear()} Activity Calendar</h3>
+        <p style="font-size:12px;color:var(--text-mute);margin-bottom:16px">Each square = one day. Darker green = more sessions. Tap any day for details.</p>
+
+        <div class="stats-grid" style="margin-bottom:20px">
+          <div class="stat-card">
+            <div class="stat-value">${totalThisRange}</div>
+            <div class="stat-label">Sessions (365d)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${activeDays}</div>
+            <div class="stat-label">Active Days</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${longestStreak}</div>
+            <div class="stat-label">Longest Streak</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${cells.filter(c => c.count > 0 && new Date(c.date).toDateString() === new Date().toDateString()).length > 0 ? '✓' : '—'}</div>
+            <div class="stat-label">Today</div>
+          </div>
+        </div>
+
+        <div class="calendar-year">
+          <div class="calendar-month-labels" id="cal-month-labels"></div>
+          <div class="calendar-grid" id="cal-grid"></div>
+        </div>
+
+        <div class="calendar-legend">
+          <span>Less</span>
+          <div class="calendar-legend-cells">
+            <div class="calendar-legend-cell" style="background:var(--bg-elev)"></div>
+            <div class="calendar-legend-cell" style="background:#1f3a1f"></div>
+            <div class="calendar-legend-cell" style="background:#2d5a2d"></div>
+            <div class="calendar-legend-cell" style="background:#4ade80"></div>
+            <div class="calendar-legend-cell" style="background:#a3e635"></div>
+          </div>
+          <span>More</span>
+        </div>
+
+        <div class="heatmap-peak-info" style="margin-top:16px" id="cal-info">
+          Tap any day to see details. ${activeDays > 0 ? `You've logged on <strong>${activeDays}</strong> day${activeDays === 1 ? '' : 's'} in the last year.` : 'Start logging to fill in your calendar.'}
+        </div>
+      </div>
+    `;
+
+    // Render calendar grid
+    const grid = document.getElementById('cal-grid');
+    const monthLabelsEl = document.getElementById('cal-month-labels');
+    if (grid && monthLabelsEl) {
+      grid.innerHTML = cells.map(c => {
+        const intensity = c.count / maxDayCount;
+        const bg = c.count > 0 ? heatColor(intensity) : '';
+        const cls = c.count > 0 ? 'has-data' : '';
+        const dateStr = c.date.toDateString();
+        const liftStr = c.avgLift !== null ? ` · avg lift ${c.avgLift > 0 ? '+' : ''}${c.avgLift.toFixed(1)}` : '';
+        const title = `${dateStr}: ${c.count} session${c.count === 1 ? '' : 's'}${liftStr}`;
+        return `<div class="calendar-cell ${cls}" data-date="${dateStr}" data-count="${c.count}" title="${escapeHtml(title)}" style="${bg ? 'background:' + bg + ';border-color:transparent' : ''}"></div>`;
+      }).join('');
+
+      // Month labels — position them above the correct week column
+      let labelHtml = '';
+      let prevWeek = 0;
+      for (const ml of monthLabels) {
+        // Add empty spans for gap weeks
+        const gap = ml.week - prevWeek;
+        for (let g = 0; g < gap; g++) labelHtml += '<span></span>';
+        labelHtml += `<span class="label">${ml.label}</span>`;
+        prevWeek = ml.week + 1;
+      }
+      monthLabelsEl.innerHTML = labelHtml;
+
+      // Click handlers
+      grid.querySelectorAll('.calendar-cell').forEach(cell => {
+        cell.addEventListener('click', () => {
+          const count = parseInt(cell.dataset.count);
+          const date = cell.dataset.date;
+          const info = document.getElementById('cal-info');
+          if (count > 0) {
+            const cellData = cells.find(c => c.date.toDateString() === date);
+            const liftStr = cellData && cellData.avgLift !== null ? ` · avg mood lift ${cellData.avgLift > 0 ? '+' : ''}${cellData.avgLift.toFixed(2)}` : '';
+            info.innerHTML = `<strong>${date}</strong>: ${count} session${count === 1 ? '' : 's'}${liftStr}`;
+          } else {
+            info.innerHTML = `<strong>${date}</strong>: no sessions logged.`;
+          }
+        });
+      });
+    }
+  }
+
+  function computeStreak(cells) {
+    let longest = 0, current = 0;
+    for (const c of cells) {
+      if (c.count > 0) {
+        current++;
+        if (current > longest) longest = current;
+      } else {
+        current = 0;
+      }
+    }
+    return longest;
+  }
+
+  function renderLeaderboard(items, maxCount) {
+    return items.map(([name, count], i) => `
+      <div class="leaderboard-row">
+        <div class="rank">${i + 1}</div>
+        <div style="flex:1">
+          <div class="lb-name">${escapeHtml(name)}</div>
+          <div class="lb-bar"><div class="lb-bar-fill" style="width:${(count / maxCount * 100).toFixed(0)}%"></div></div>
+          <div class="lb-meta" style="margin-top:4px">${count} session${count === 1 ? '' : 's'}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ===== Heatmap helpers =====
+  function formatHour(h) {
+    if (h === 0) return '12 AM';
+    if (h === 12) return '12 PM';
+    if (h < 12) return h + ' AM';
+    return (h - 12) + ' PM';
+  }
+
+  // Map a 0..1 intensity to a heat color (dark green → green → lime → amber)
+  function heatColor(intensity) {
+    if (intensity <= 0) return null; // no data
+    const i = Math.max(0, Math.min(1, intensity));
+    // 5 stops: dark green, green, lime, amber
+    const stops = [
+      { t: 0,    rgb: [31, 58, 31] },    // #1f3a1f
+      { t: 0.33, rgb: [45, 90, 45] },    // #2d5a2d
+      { t: 0.6,  rgb: [74, 222, 128] },  // #4ade80
+      { t: 0.85, rgb: [163, 230, 53] },  // #a3e635
+      { t: 1,    rgb: [251, 191, 36] }   // #fbbf24
+    ];
+    for (let s = 0; s < stops.length - 1; s++) {
+      if (i >= stops[s].t && i <= stops[s+1].t) {
+        const ratio = (i - stops[s].t) / (stops[s+1].t - stops[s].t);
+        const r = Math.round(stops[s].rgb[0] + ratio * (stops[s+1].rgb[0] - stops[s].rgb[0]));
+        const g = Math.round(stops[s].rgb[1] + ratio * (stops[s+1].rgb[1] - stops[s].rgb[1]));
+        const b = Math.round(stops[s].rgb[2] + ratio * (stops[s+1].rgb[2] - stops[s].rgb[2]));
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+    }
+    return null;
+  }
+
+  // Map a mood lift value (-2..+2 typical) to a diverging color scale
+  function moodColor(lift, range) {
+    if (lift === null || isNaN(lift)) return null;
+    // Normalize: -range.max = bottom (red), 0 = neutral (gray), +range.max = top (green)
+    const maxAbs = Math.max(Math.abs(range.min), Math.abs(range.max), 1);
+    const norm = Math.max(-1, Math.min(1, lift / maxAbs));
+    if (norm > 0) {
+      // gray → green
+      const r = Math.round(120 + (1 - norm) * (160 - 120));
+      const g = Math.round(140 + norm * (222 - 140));
+      const b = Math.round(140 + (1 - norm) * (128 - 140));
+      return `rgb(${r}, ${g}, ${b})`;
+    } else if (norm < 0) {
+      // gray → red
+      const a = -norm;
+      const r = Math.round(140 + a * (248 - 140));
+      const g = Math.round(140 + (1 - a) * (140 - 113));
+      const b = Math.round(140 + (1 - a) * (140 - 113));
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+    return 'rgb(120, 140, 140)';
+  }
+
+  function renderHeatmap(hourlyData, maxCount, liftRange, metric) {
+    return hourlyData.map(d => {
+      let value = '';
+      let bgColor = null;
+      let intensity = 0;
+      let hasData = false;
+      let tooltip = '';
+
+      if (metric === 'count') {
+        value = d.count > 0 ? String(d.count) : '·';
+        intensity = d.count / maxCount;
+        hasData = d.count > 0;
+        bgColor = heatColor(intensity);
+        tooltip = `${formatHour(d.hour)}: ${d.count} session${d.count === 1 ? '' : 's'}`;
+      } else {
+        // mood lift
+        if (d.moodLifts.length > 0) {
+          const avg = d.moodLifts.reduce((a,b)=>a+b,0) / d.moodLifts.length;
+          value = (avg > 0 ? '+' : '') + avg.toFixed(1);
+          bgColor = moodColor(avg, liftRange);
+          hasData = true;
+          tooltip = `${formatHour(d.hour)}: avg mood lift ${value} (${d.moodLifts.length} session${d.moodLifts.length === 1 ? '' : 's'})`;
+        } else {
+          value = '·';
+          tooltip = `${formatHour(d.hour)}: no mood data`;
+        }
+      }
+
+      const styleAttr = bgColor ? `style="background:${bgColor};border-color:${bgColor}"` : '';
+      const classAttr = hasData ? 'has-data' : '';
+      return `<div class="heatmap-cell ${classAttr}" data-hour="${d.hour}" data-metric="${metric}" title="${escapeHtml(tooltip)}" ${styleAttr}>
+        <div class="heatmap-cell-value">${value}</div>
+        <div class="heatmap-cell-hour">${d.hour === 0 ? '12a' : d.hour < 12 ? d.hour + 'a' : d.hour === 12 ? '12p' : (d.hour - 12) + 'p'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function setupHeatmapToggle(hourlyData, maxCount, liftRange, globalAvgLift, peakHour) {
+    const toggleBtns = document.querySelectorAll('.heatmap-toggle-btn');
+    const heatmap = document.getElementById('heatmap');
+    const legend = document.getElementById('heatmap-gradient');
+    const peakInfo = document.getElementById('heatmap-peak-info');
+    if (!heatmap || !toggleBtns.length) return;
+
+    toggleBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggleBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const metric = btn.dataset.metric;
+        heatmap.innerHTML = renderHeatmap(hourlyData, maxCount, liftRange, metric);
+
+        if (metric === 'lift') {
+          legend.style.background = 'linear-gradient(to right, #f87171, #7898a0, #4ade80)';
+          const peakLiftHour = hourlyData
+            .filter(d => d.moodLifts.length > 0)
+            .map(d => ({ hour: d.hour, avg: d.moodLifts.reduce((a,b)=>a+b,0)/d.moodLifts.length, count: d.moodLifts.length }))
+            .sort((a, b) => b.avg - a.avg)[0];
+          if (peakLiftHour) {
+            peakInfo.innerHTML = `Best mood lift at <strong>${formatHour(peakLiftHour.hour)}</strong> — avg <strong>${peakLiftHour.avg > 0 ? '+' : ''}${peakLiftHour.avg.toFixed(2)}</strong> across ${peakLiftHour.count} session${peakLiftHour.count === 1 ? '' : 's'}. Overall average: ${globalAvgLift > 0 ? '+' : ''}${globalAvgLift.toFixed(2)}.`;
+          } else {
+            peakInfo.innerHTML = 'No mood data yet. Track mood before & after to see your best hours.';
+          }
+        } else {
+          legend.style.background = 'linear-gradient(to right, #131a13, #1f3a1f, #2d5a2d, #4ade80, #a3e635, #fbbf24)';
+          if (peakHour.count > 0) {
+            peakInfo.innerHTML = `Peak hour: <strong>${formatHour(peakHour.hour)}</strong> — ${peakHour.count} session${peakHour.count === 1 ? '' : 's'} logged.`;
+          } else {
+            peakInfo.innerHTML = 'No sessions yet — log one to see your hourly patterns.';
+          }
+        }
+      });
+    });
+
+    // Tap cell for toast detail
+    heatmap.querySelectorAll('.heatmap-cell').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const hour = parseInt(cell.dataset.hour);
+        const d = hourlyData[hour];
+        let msg = formatHour(hour) + ': ';
+        if (d.count === 0) {
+          msg += 'no sessions logged';
+        } else {
+          msg += d.count + ' session' + (d.count === 1 ? '' : 's');
+          if (d.moodLifts.length > 0) {
+            const avg = d.moodLifts.reduce((a,b)=>a+b,0) / d.moodLifts.length;
+            msg += ' · avg mood lift ' + (avg > 0 ? '+' : '') + avg.toFixed(2);
+          }
+        }
+        showToast(msg, 3500);
+      });
+    });
+  }
+
+  // ===== Export / Import =====
+  function setupExportImport() {
+    document.getElementById('export-btn').addEventListener('click', exportData);
+    document.getElementById('import-btn').addEventListener('click', () => {
+      document.getElementById('import-file').click();
+    });
+    document.getElementById('import-file').addEventListener('change', importData);
+
+    document.getElementById('search-input').addEventListener('input', renderHistory);
+    document.getElementById('strain-filter').addEventListener('change', renderHistory);
+  }
+
+  async function exportData() {
+    try {
+      showToast('Building backup...');
+      const sessions = await db.sessions.toArray();
+      const exported = [];
+      for (const s of sessions) {
+        const session = { ...s };
+        if (s.audio) {
+          session.audio = await blobToBase64(s.audio);
+          session.audioType = s.audio.type;
+        }
+        exported.push(session);
+      }
+      const customStrains = await db.customStrains.toArray();
+      const backup = {
+        app: 'The Stoner Book',
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        sessionCount: exported.length,
+        customStrainCount: customStrains.length,
+        sessions: exported,
+        customStrains: customStrains
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stoner-book-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(`Exported ${exported.length} sessions · ${customStrains.length} custom strains`);
+    } catch (err) {
+      console.error(err);
+      showToast('Export failed');
+    }
+  }
+
+  async function importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const backup = JSON.parse(text);
+      if (!backup.sessions || !Array.isArray(backup.sessions)) {
+        showToast('Invalid backup file');
+        return;
+      }
+      const strainCount = backup.customStrains ? backup.customStrains.length : 0;
+      const msg = `Import ${backup.sessions.length} sessions${strainCount ? ` and ${strainCount} custom strains` : ''}? This will add to your existing data.`;
+      if (!confirm(msg)) {
+        return;
+      }
+      let imported = 0;
+      for (const s of backup.sessions) {
+        const session = { ...s };
+        delete session.id;
+        if (typeof session.audio === 'string' && session.audio.startsWith('data:')) {
+          session.audio = await base64ToBlob(session.audio, session.audioType);
+        }
+        await db.sessions.add(session);
+        imported++;
+      }
+      let strainsImported = 0;
+      if (backup.customStrains && Array.isArray(backup.customStrains)) {
+        for (const cs of backup.customStrains) {
+          const strain = { ...cs };
+          delete strain.id;
+          if (!isStrainInCustomLibrary(strain.name)) {
+            await db.customStrains.add(strain);
+            strainsImported++;
+          }
+        }
+        await loadCustomStrains();
+      }
+      showToast(`Imported ${imported} sessions${strainsImported ? ` · ${strainsImported} strains` : ''}`);
+      refreshAll();
+    } catch (err) {
+      console.error(err);
+      showToast('Import failed — invalid file');
+    } finally {
+      e.target.value = '';
+    }
+  }
+
+  function blobToBase64(blob) {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function base64ToBlob(dataUrl, type) {
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  }
+
+  // ===== PWA Install =====
+  function setupInstallPrompt() {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const dismissed = localStorage.getItem('install-dismissed');
+      if (!dismissed) {
+        setTimeout(() => {
+          document.getElementById('install-banner').classList.add('show');
+        }, 8000);
+      }
+    });
+
+    document.getElementById('install-now').addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          document.getElementById('install-banner').classList.remove('show');
+        }
+        deferredPrompt = null;
+      }
+    });
+
+    document.getElementById('install-dismiss').addEventListener('click', () => {
+      document.getElementById('install-banner').classList.remove('show');
+      localStorage.setItem('install-dismissed', '1');
+    });
+
+    window.addEventListener('appinstalled', () => {
+      document.getElementById('install-banner').classList.remove('show');
+    });
+  }
+
+  // ===== Helpers =====
+  function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function formatDate(d) {
+    const now = new Date();
+    const diff = now - d;
+    const day = 86400000;
+    if (diff < day && now.getDate() === d.getDate()) {
+      return 'Today ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+    if (diff < 2 * day) return 'Yesterday ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) +
+      ' ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function showToast(msg, duration = 2400) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), duration);
+  }
+
+  // ===== Go =====
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
