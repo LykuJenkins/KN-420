@@ -2294,7 +2294,7 @@
       <!-- Step 4: Review & Save -->
       <div class="wizard-step" data-step="4">
         <div class="wizard-step-title">✅ Looks good?</div>
-        <div class="wizard-step-sub">Quick review, then save it to the vault.</div>
+        <div class="wizard-step-sub" id="wizard-step-4-sub">Quick review, then save it to the vault.</div>
 
         <div class="wizard-review" id="wizard-review"></div>
 
@@ -2620,6 +2620,7 @@
   let currentVaultViewMode = 'cosmic';
   let currentWizardStep = 1;
   let rabbitHoleWaypoints = [];
+  let editingSessionDataOnly = false;
 
   // ===== PWA Manifest (built at runtime so file stays single-file) =====
   const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -3134,7 +3135,15 @@
   function setupWizard() {
     // Next buttons
     document.getElementById('wizard-next-1').addEventListener('click', () => goToWizardStep(2));
-    document.getElementById('wizard-next-2').addEventListener('click', () => goToWizardStep(3));
+    document.getElementById('wizard-next-2').addEventListener('click', () => {
+      // Skip Step 3 (Journey) when editing session data only
+      if (editingSessionDataOnly) {
+        renderReviewSummary();
+        goToWizardStep(4);
+      } else {
+        goToWizardStep(3);
+      }
+    });
     document.getElementById('wizard-next-3').addEventListener('click', () => {
       renderReviewSummary();
       goToWizardStep(4);
@@ -3142,7 +3151,14 @@
     // Back buttons
     document.getElementById('wizard-back-2').addEventListener('click', () => goToWizardStep(1));
     document.getElementById('wizard-back-3').addEventListener('click', () => goToWizardStep(2));
-    document.getElementById('wizard-back-4').addEventListener('click', () => goToWizardStep(3));
+    document.getElementById('wizard-back-4').addEventListener('click', () => {
+      // Skip Step 3 (Journey) when editing session data only
+      if (editingSessionDataOnly) {
+        goToWizardStep(2);
+      } else {
+        goToWizardStep(3);
+      }
+    });
   }
 
   function goToWizardStep(step) {
@@ -3151,6 +3167,16 @@
       s.classList.toggle('active', parseInt(s.dataset.step) === step);
     });
     updateWizardProgress();
+    // Update dynamic labels based on edit mode
+    const nextBtn2 = document.getElementById('wizard-next-2');
+    const step4Sub = document.getElementById('wizard-step-4-sub');
+    if (editingSessionDataOnly) {
+      if (nextBtn2) nextBtn2.textContent = 'Next: Review →';
+      if (step4Sub) step4Sub.textContent = 'Review your session data changes. High dias (notes, audio, rabbit hole) stay in the Vault.';
+    } else {
+      if (nextBtn2) nextBtn2.textContent = "Next: Where'd your mind go? →";
+      if (step4Sub) step4Sub.textContent = 'Quick review, then save it to the vault.';
+    }
     window.scrollTo(0, 0);
   }
 
@@ -3272,7 +3298,6 @@
       try {
         const strainInput = document.getElementById('strain').value.trim();
         const terpeneInput = document.getElementById('terpenes').value.trim();
-        const rabbitHole = getRabbitHoleData();
         const session = {
           datetime: document.getElementById('datetime').value,
           strain: strainInput,
@@ -3280,19 +3305,27 @@
           terpenes: terpeneInput ? terpeneInput.split(',').map(t => t.trim()).filter(Boolean) : [],
           moodBefore: selectedMoodBefore,
           moodAfter: selectedMoodAfter,
-          effects: Array.from(selectedEffects),
-          notes: document.getElementById('notes').value.trim(),
-          rabbitHole: rabbitHole,
-          audio: recordedBlob || null,
-          audioDuration: recordedBlob ? recSeconds : null
+          effects: Array.from(selectedEffects)
         };
-        if (isEditing) {
+        if (editingSessionDataOnly) {
+          // Session data edit from History — DON'T touch notes/audio/rabbitHole
           await db.sessions.update(editingSessionId, session);
-          showToast('Session updated ✏️');
+          showToast('Session data updated ✏️');
         } else {
-          session.createdAt = Date.now();
-          await db.sessions.add(session);
-          showToast('Session saved 🌿');
+          // New session or duplicate — include high dias
+          const rabbitHole = getRabbitHoleData();
+          session.notes = document.getElementById('notes').value.trim();
+          session.rabbitHole = rabbitHole;
+          session.audio = recordedBlob || null;
+          session.audioDuration = recordedBlob ? recSeconds : null;
+          if (editingSessionId) {
+            await db.sessions.update(editingSessionId, session);
+            showToast('Session updated ✏️');
+          } else {
+            session.createdAt = Date.now();
+            await db.sessions.add(session);
+            showToast('Session saved 🌿');
+          }
         }
         resetForm();
         refreshAll();
@@ -3319,12 +3352,12 @@
     if (!s) return;
     closeModal();
     resetForm();
+    editingSessionDataOnly = true; // History edits = session data only, high dias stay in Vault
     // Populate form fields
     if (s.datetime) document.getElementById('datetime').value = s.datetime;
     document.getElementById('strain').value = s.strain || '';
     document.getElementById('type').value = s.type || '';
     document.getElementById('terpenes').value = (s.terpenes || []).join(', ');
-    document.getElementById('notes').value = s.notes || '';
     // Mood
     selectedMoodBefore = s.moodBefore || null;
     selectedMoodAfter = s.moodAfter || null;
@@ -3345,19 +3378,6 @@
         if (chip) chip.classList.add('active');
       }
     });
-    // Audio - keep existing blob if present
-    if (s.audio) {
-      recordedBlob = s.audio;
-      recSeconds = s.audioDuration || 0;
-      const status = document.getElementById('rec-status');
-      status.textContent = 'Recorded · ' + formatTime(recSeconds);
-      status.style.color = 'var(--green-bright)';
-      document.getElementById('rec-clear').style.display = 'block';
-    }
-    // Rabbit hole
-    if (s.rabbitHole) {
-      loadRabbitHole(s.rabbitHole);
-    }
     // Lookup button state
     const strainVal = s.strain || '';
     document.getElementById('lookup-btn').disabled = !strainVal || !!findStrainInLibrary(strainVal);
@@ -3445,6 +3465,7 @@
     clearRecording();
     clearRabbitHole();
     exitEditMode();
+    editingSessionDataOnly = false;
     goToWizardStep(1);
   }
 
@@ -3457,8 +3478,14 @@
 
   function enterEditMode(sessionId) {
     editingSessionId = sessionId;
-    document.getElementById('save-btn').textContent = 'Update Session';
-    document.getElementById('editing-banner').classList.add('show');
+    document.getElementById('save-btn').textContent = editingSessionDataOnly ? 'Update Session Data' : 'Update Session';
+    const banner = document.getElementById('editing-banner');
+    banner.classList.add('show');
+    if (editingSessionDataOnly) {
+      banner.innerHTML = '✏️ Editing session data (strain, mood, effects) — high dias (notes, audio, rabbit hole) are managed in the Vault.';
+    } else {
+      banner.innerHTML = '✏️ Editing session — changes will update the existing record.';
+    }
     document.getElementById('cancel-edit-btn').style.display = 'block';
     goToWizardStep(1);
     switchView('log');
@@ -3744,7 +3771,7 @@
       </div>` : ''}
 
       <div class="modal-actions">
-        <button class="btn-secondary" id="edit-btn">✏️ Edit</button>
+        <button class="btn-secondary" id="edit-btn">✏️ Edit Session Data</button>
         <button class="btn-secondary" id="duplicate-btn">📋 Duplicate</button>
         <button class="btn-danger" id="delete-btn">Delete</button>
       </div>
@@ -3843,19 +3870,34 @@
 
     list.innerHTML = entries.map(s => renderVaultEntry(s)).join('');
 
-    // Wire up note action buttons
-    list.querySelectorAll('.vault-action-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const action = btn.dataset.action;
-        const sessionId = parseInt(btn.dataset.sessionId);
-        if (action === 'edit') startEditVaultNote(sessionId);
-        else if (action === 'save') saveVaultNote(sessionId);
-        else if (action === 'cancel') cancelEditVaultNote(sessionId);
-        else if (action === 'delete') deleteVaultNote(sessionId);
-        else if (action === 'copy') copyVaultNote(sessionId);
-      });
-    });
+    // Event delegation for ALL vault action buttons (handles dynamically added buttons too)
+    list.onclick = (e) => {
+      const btn = e.target.closest('.vault-action-btn');
+      if (!btn) return;
+      e.stopPropagation();
+      const action = btn.dataset.action;
+      const sessionId = parseInt(btn.dataset.sessionId);
+      if (action === 'edit') startEditVaultNote(sessionId);
+      else if (action === 'save') saveVaultNote(sessionId);
+      else if (action === 'cancel') cancelEditVaultNote(sessionId);
+      else if (action === 'delete') deleteVaultNote(sessionId);
+      else if (action === 'copy') copyVaultNote(sessionId);
+      else if (action === 'delete-audio') deleteVaultAudio(sessionId);
+      else if (action === 'edit-rh') startEditVaultRabbitHole(sessionId);
+      else if (action === 'save-rh') saveVaultRabbitHole(sessionId);
+      else if (action === 'cancel-rh') cancelEditVaultRabbitHole(sessionId);
+      else if (action === 'delete-rh') deleteVaultRabbitHole(sessionId);
+      else if (action === 'add-waypoint') addVaultWaypoint(sessionId);
+      else if (action === 'remove-waypoint') removeVaultWaypoint(sessionId, parseInt(btn.dataset.idx));
+    };
+
+    // Event delegation for waypoint input changes
+    list.oninput = (e) => {
+      const input = e.target.closest('.vault-rh-waypoint-input');
+      if (!input) return;
+      const idx = parseInt(input.dataset.idx);
+      vaultRabbitHoleWaypoints[idx] = input.value;
+    };
 
     // Wire up header clicks to open the session detail
     list.querySelectorAll('.vault-entry-header').forEach(header => {
@@ -3979,6 +4021,7 @@
     const tags = (s.terpenes || []).slice(0, 2).map(t => renderTerpeneTag(t)).join('') +
                 (s.effects || []).slice(0, 2).map(e => `<span class="tag">${escapeHtml(e)}</span>`).join('');
 
+    // Audio section with delete button
     let audioHtml = '';
     if (s.audio) {
       const url = URL.createObjectURL(s.audio);
@@ -3987,12 +4030,14 @@
         <div class="vault-audio">
           <div class="vault-audio-meta">
             <span>${formatTime(s.audioDuration || 0)} duration</span>
+            <button class="vault-action-btn danger" data-action="delete-audio" data-session-id="${s.id}">🗑 Delete audio</button>
           </div>
           <audio controls src="${url}"></audio>
         </div>
       `;
     }
 
+    // Notes section with edit/copy/delete (existing, unchanged)
     let noteHtml = '';
     if (s.notes && s.notes.trim()) {
       noteHtml = `
@@ -4002,6 +4047,35 @@
           <button class="vault-action-btn primary" data-action="edit" data-session-id="${s.id}">✏️ Edit</button>
           <button class="vault-action-btn" data-action="copy" data-session-id="${s.id}">📋 Copy</button>
           <button class="vault-action-btn danger" data-action="delete" data-session-id="${s.id}">🗑 Delete</button>
+        </div>
+      `;
+    } else {
+      noteHtml = `
+        <div class="vault-section-label"><span class="icon">💡</span> Ideas & Notes</div>
+        <div class="vault-note" id="vault-note-${s.id}" style="color:var(--text-mute);font-style:italic">No notes yet</div>
+        <div class="vault-note-actions" id="vault-note-actions-${s.id}">
+          <button class="vault-action-btn primary" data-action="edit" data-session-id="${s.id}">✏️ Add note</button>
+        </div>
+      `;
+    }
+
+    // Rabbit hole section with edit capability
+    let rabbitHoleHtml = '';
+    if (s.rabbitHole && (s.rabbitHole.start || s.rabbitHole.end || (s.rabbitHole.waypoints && s.rabbitHole.waypoints.length))) {
+      rabbitHoleHtml = `
+        <div class="vault-section-label"><span class="icon">🐰</span> Rabbit Hole</div>
+        <div id="vault-rh-${s.id}">${renderRabbitHoleDisplay(s.rabbitHole)}</div>
+        <div class="vault-note-actions">
+          <button class="vault-action-btn primary" data-action="edit-rh" data-session-id="${s.id}">✏️ Edit Path</button>
+          <button class="vault-action-btn danger" data-action="delete-rh" data-session-id="${s.id}">🗑 Clear</button>
+        </div>
+      `;
+    } else {
+      rabbitHoleHtml = `
+        <div class="vault-section-label"><span class="icon">🐰</span> Rabbit Hole</div>
+        <div class="vault-note" style="color:var(--text-mute);font-style:italic;font-size:13px">No rabbit hole tracked</div>
+        <div class="vault-note-actions">
+          <button class="vault-action-btn primary" data-action="edit-rh" data-session-id="${s.id}">✏️ Add path</button>
         </div>
       `;
     }
@@ -4017,11 +4091,13 @@
             ${typeBadge}
             ${moodStr}
             ${tags}
+            <span style="font-size:9px;color:var(--text-mute);margin-left:auto">session data → edit in History</span>
           </div>
         </div>
         <div class="vault-entry-body">
           ${audioHtml}
           ${noteHtml}
+          ${rabbitHoleHtml}
         </div>
       </div>
     `;
@@ -4109,6 +4185,146 @@
         showToast('Could not copy — try manually selecting');
       }
       document.body.removeChild(ta);
+    }
+  }
+
+  // ===== Vault Audio Management =====
+  async function deleteVaultAudio(sessionId) {
+    if (!confirm('Delete this voice note? The session itself will be kept.')) return;
+    try {
+      await db.sessions.update(sessionId, { audio: null, audioDuration: null });
+      await refreshAll();
+      showToast('Audio deleted');
+    } catch (err) {
+      console.error(err);
+      showToast('Could not delete audio');
+    }
+  }
+
+  // ===== Vault Rabbit Hole Editing =====
+  // Separate waypoint state for vault editing (different from wizard's rabbitHoleWaypoints)
+  let vaultRabbitHoleWaypoints = [];
+
+  function startEditVaultRabbitHole(sessionId) {
+    const session = allSessions.find(s => s.id === sessionId);
+    if (!session) return;
+    const rh = session.rabbitHole || { start: '', end: '', waypoints: [] };
+    vaultRabbitHoleWaypoints = [...(rh.waypoints || [])];
+
+    const container = document.getElementById('vault-rh-' + sessionId);
+    if (!container) return;
+
+    container.innerHTML = renderVaultRabbitHoleEditor(sessionId, rh);
+    // Wire up the add/remove waypoint buttons and inputs
+    wireVaultRabbitHoleEditor(sessionId);
+  }
+
+  function renderVaultRabbitHoleEditor(sessionId, rh) {
+    return `
+      <div class="rabbit-hole-section" style="margin-top:0">
+        <div class="rabbit-hole-field">
+          <label>🚀 Starting thought</label>
+          <input type="text" id="vault-rh-start-${sessionId}" value="${escapeHtml(rh.start || '')}" placeholder="Where did you start?">
+        </div>
+        <div id="vault-rh-waypoints-${sessionId}">
+          ${vaultRabbitHoleWaypoints.map((wp, idx) => `
+            <div class="rabbit-hole-waypoint">
+              <div class="rabbit-hole-waypoint-num">${idx + 1}</div>
+              <input type="text" class="vault-rh-waypoint-input" data-session-id="${sessionId}" data-idx="${idx}" value="${escapeHtml(wp)}" placeholder="Where did your mind go next?">
+              <button type="button" class="rabbit-hole-waypoint-remove vault-action-btn" data-action="remove-waypoint" data-session-id="${sessionId}" data-idx="${idx}">✕</button>
+            </div>
+          `).join('')}
+        </div>
+        <button type="button" class="rabbit-hole-add-btn" data-action="add-waypoint" data-session-id="${sessionId}">+ Add a waypoint</button>
+        <div class="rabbit-hole-field" style="margin-top:10px">
+          <label>🎯 Ending thought</label>
+          <input type="text" id="vault-rh-end-${sessionId}" value="${escapeHtml(rh.end || '')}" placeholder="Where did you land?">
+        </div>
+      </div>
+      <div class="vault-note-actions" style="margin-top:10px">
+        <button class="vault-action-btn save" data-action="save-rh" data-session-id="${sessionId}">💾 Save Path</button>
+        <button class="vault-action-btn" data-action="cancel-rh" data-session-id="${sessionId}">✕ Cancel</button>
+      </div>
+    `;
+  }
+
+  function wireVaultRabbitHoleEditor(sessionId) {
+    // Wire up waypoint inputs
+    document.querySelectorAll(`.vault-rh-waypoint-input[data-session-id="${sessionId}"]`).forEach(input => {
+      input.addEventListener('input', (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        vaultRabbitHoleWaypoints[idx] = e.target.value;
+      });
+    });
+  }
+
+  function addVaultWaypoint(sessionId) {
+    vaultRabbitHoleWaypoints.push('');
+    // Re-render just the waypoints section
+    const waypointsContainer = document.getElementById('vault-rh-waypoints-' + sessionId);
+    if (!waypointsContainer) return;
+    waypointsContainer.innerHTML = vaultRabbitHoleWaypoints.map((wp, idx) => `
+      <div class="rabbit-hole-waypoint">
+        <div class="rabbit-hole-waypoint-num">${idx + 1}</div>
+        <input type="text" class="vault-rh-waypoint-input" data-session-id="${sessionId}" data-idx="${idx}" value="${escapeHtml(wp)}" placeholder="Where did your mind go next?">
+        <button type="button" class="rabbit-hole-waypoint-remove vault-action-btn" data-action="remove-waypoint" data-session-id="${sessionId}" data-idx="${idx}">✕</button>
+      </div>
+    `).join('');
+    wireVaultRabbitHoleEditor(sessionId);
+    // Focus the new input
+    const newInput = waypointsContainer.querySelector('.vault-rh-waypoint-input:last-child');
+    if (newInput) newInput.focus();
+  }
+
+  function removeVaultWaypoint(sessionId, idx) {
+    vaultRabbitHoleWaypoints.splice(idx, 1);
+    const waypointsContainer = document.getElementById('vault-rh-waypoints-' + sessionId);
+    if (!waypointsContainer) return;
+    waypointsContainer.innerHTML = vaultRabbitHoleWaypoints.map((wp, i) => `
+      <div class="rabbit-hole-waypoint">
+        <div class="rabbit-hole-waypoint-num">${i + 1}</div>
+        <input type="text" class="vault-rh-waypoint-input" data-session-id="${sessionId}" data-idx="${i}" value="${escapeHtml(wp)}" placeholder="Where did your mind go next?">
+        <button type="button" class="rabbit-hole-waypoint-remove vault-action-btn" data-action="remove-waypoint" data-session-id="${sessionId}" data-idx="${i}">✕</button>
+      </div>
+    `).join('');
+    wireVaultRabbitHoleEditor(sessionId);
+  }
+
+  async function saveVaultRabbitHole(sessionId) {
+    const startEl = document.getElementById('vault-rh-start-' + sessionId);
+    const endEl = document.getElementById('vault-rh-end-' + sessionId);
+    if (!startEl || !endEl) return;
+    const rabbitHole = {
+      start: startEl.value.trim(),
+      end: endEl.value.trim(),
+      waypoints: vaultRabbitHoleWaypoints.map(w => w.trim()).filter(Boolean)
+    };
+    // If all empty, set to null
+    const isEmpty = !rabbitHole.start && !rabbitHole.end && rabbitHole.waypoints.length === 0;
+    try {
+      await db.sessions.update(sessionId, { rabbitHole: isEmpty ? null : rabbitHole });
+      await refreshAll();
+      showToast('Rabbit hole saved 🐰');
+    } catch (err) {
+      console.error(err);
+      showToast('Could not save rabbit hole');
+    }
+  }
+
+  function cancelEditVaultRabbitHole(sessionId) {
+    vaultRabbitHoleWaypoints = [];
+    renderVault();
+  }
+
+  async function deleteVaultRabbitHole(sessionId) {
+    if (!confirm('Clear the rabbit hole? This cannot be undone.')) return;
+    try {
+      await db.sessions.update(sessionId, { rabbitHole: null });
+      await refreshAll();
+      showToast('Rabbit hole cleared');
+    } catch (err) {
+      console.error(err);
+      showToast('Could not clear rabbit hole');
     }
   }
 
