@@ -1996,6 +1996,119 @@
   .wizard-review-label { color: var(--text-mute); flex-shrink: 0; }
   .wizard-review-value { color: var(--text); text-align: right; word-break: break-word; }
 
+  /* ===== Standalone High Dia Editor (in Vault) ===== */
+  .vault-new-high-dia-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    color: #0a0f0a;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: transform 0.15s;
+  }
+  .vault-new-high-dia-btn:hover { transform: translateY(-1px); }
+
+  .high-dia-modal-field { margin-bottom: 16px; }
+  .high-dia-modal-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .high-dia-modal-field textarea,
+  .high-dia-modal-field input[type="text"] {
+    width: 100%;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .high-dia-modal-field textarea { resize: vertical; min-height: 100px; }
+  .high-dia-modal-field textarea:focus,
+  .high-dia-modal-field input:focus { outline: none; border-color: var(--green); }
+
+  /* ===== Dave Chat on High Dias ===== */
+  .dave-chat-section {
+    background: rgba(74, 222, 128, 0.04);
+    border: 1px solid rgba(74, 222, 128, 0.15);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-top: 10px;
+  }
+  .dave-chat-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .dave-chat-section-title { font-size: 14px; font-weight: 700; color: var(--green-bright); }
+  .dave-chat-mini {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dave-chat-mini .msg {
+    max-width: 88%;
+    padding: 8px 12px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .dave-chat-input-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .dave-chat-input-row input {
+    flex: 1;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .dave-chat-input-row input:focus { outline: none; border-color: var(--green); }
+  .dave-chat-send {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    border: none;
+    color: #0a0f0a;
+    font-size: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .dave-chat-empty {
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 12px;
+    font-style: italic;
+    padding: 16px 8px;
+  }
+  .dave-chat-context {
+    font-size: 10px;
+    color: var(--text-mute);
+    background: rgba(255,255,255,0.03);
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+
   /* Strain autocomplete + lookup */
   .strain-input-wrap { position: relative; }
   .strain-actions { display: flex; gap: 8px; align-items: stretch; }
@@ -2131,21 +2244,21 @@
       <div class="wizard-progress-step active" data-step="1">
         <div style="display:flex;flex-direction:column;align-items:center">
           <div class="wizard-progress-dot">🌿</div>
-          <div class="wizard-progress-label">Strain</div>
+          <div class="wizard-progress-label">Setup</div>
         </div>
         <div class="wizard-progress-line"></div>
       </div>
       <div class="wizard-progress-step" data-step="2">
         <div style="display:flex;flex-direction:column;align-items:center">
-          <div class="wizard-progress-dot">😊</div>
-          <div class="wizard-progress-label">Feeling</div>
+          <div class="wizard-progress-dot">💭</div>
+          <div class="wizard-progress-label">Session</div>
         </div>
         <div class="wizard-progress-line"></div>
       </div>
       <div class="wizard-progress-step" data-step="3">
         <div style="display:flex;flex-direction:column;align-items:center">
-          <div class="wizard-progress-dot">🐰</div>
-          <div class="wizard-progress-label">Journey</div>
+          <div class="wizard-progress-dot">✨</div>
+          <div class="wizard-progress-label">Reflection</div>
         </div>
         <div class="wizard-progress-line"></div>
       </div>
@@ -2158,10 +2271,10 @@
     </div>
 
     <form id="session-form">
-      <!-- Step 1: The Strain -->
+      <!-- Step 1: Setup (strain info + mood before) -->
       <div class="wizard-step active" data-step="1">
         <div class="wizard-step-title">🌿 What are we smoking?</div>
-        <div class="wizard-step-sub">Start with the strain, man. The rest flows from here.</div>
+        <div class="wizard-step-sub">Set the scene, man. Strain, vibe check before we begin.</div>
 
         <div class="field">
           <label for="datetime">When</label>
@@ -2197,16 +2310,6 @@
           <input type="text" id="terpenes" placeholder="limonene, myrcene, caryophyllene">
         </div>
 
-        <div class="wizard-nav">
-          <button type="button" class="wizard-next-btn" id="wizard-next-1">Next: How'd it feel? →</button>
-        </div>
-      </div>
-
-      <!-- Step 2: The Feeling -->
-      <div class="wizard-step" data-step="2">
-        <div class="wizard-step-title">😊 How you feeling?</div>
-        <div class="wizard-step-sub">Mood before → after, plus the effects you noticed.</div>
-
         <div class="field">
           <label>Mood Before</label>
           <div class="mood-row" id="mood-before">
@@ -2218,32 +2321,15 @@
           </div>
         </div>
 
-        <div class="field">
-          <label>Mood After</label>
-          <div class="mood-row" id="mood-after">
-            <div class="mood-btn" data-val="1">😞</div>
-            <div class="mood-btn" data-val="2">😕</div>
-            <div class="mood-btn" data-val="3">😐</div>
-            <div class="mood-btn" data-val="4">🙂</div>
-            <div class="mood-btn" data-val="5">😄</div>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Effects</label>
-          <div class="effects-grid" id="effects-grid"></div>
-        </div>
-
         <div class="wizard-nav">
-          <button type="button" class="wizard-back-btn" id="wizard-back-2">← Back</button>
-          <button type="button" class="wizard-next-btn" id="wizard-next-2">Next: Where'd your mind go? →</button>
+          <button type="button" class="wizard-next-btn" id="wizard-next-1">Next: During the session →</button>
         </div>
       </div>
 
-      <!-- Step 3: The Journey (Rabbit Hole Tracker!) -->
-      <div class="wizard-step" data-step="3">
-        <div class="wizard-step-title">🐰 Where'd your mind go?</div>
-        <div class="wizard-step-sub">Notes, voice notes, and the rabbit hole — the journey IS the destination, man.</div>
+      <!-- Step 2: The Session (notes, voice, rabbit hole — during the smoke) -->
+      <div class="wizard-step" data-step="2">
+        <div class="wizard-step-title">💭 Where's your mind at?</div>
+        <div class="wizard-step-sub">Capture it while it's happening, man. Notes, voice, the rabbit hole.</div>
 
         <div class="field">
           <label for="notes">Ideas & Notes</label>
@@ -2283,6 +2369,33 @@
             <label>🎯 Ending thought</label>
             <input type="text" id="rabbit-hole-end" placeholder="e.g., Ended up reading about pyramid geometry">
           </div>
+        </div>
+
+        <div class="wizard-nav">
+          <button type="button" class="wizard-back-btn" id="wizard-back-2">← Back</button>
+          <button type="button" class="wizard-next-btn" id="wizard-next-2">Next: How'd it land? →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Reflection (mood after + effects — after the smoke) -->
+      <div class="wizard-step" data-step="3">
+        <div class="wizard-step-title">✨ How'd it land?</div>
+        <div class="wizard-step-sub">The smoke settles. How you feeling now, and what effects did you notice?</div>
+
+        <div class="field">
+          <label>Mood After</label>
+          <div class="mood-row" id="mood-after">
+            <div class="mood-btn" data-val="1">😞</div>
+            <div class="mood-btn" data-val="2">😕</div>
+            <div class="mood-btn" data-val="3">😐</div>
+            <div class="mood-btn" data-val="4">🙂</div>
+            <div class="mood-btn" data-val="5">😄</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Effects</label>
+          <div class="effects-grid" id="effects-grid"></div>
         </div>
 
         <div class="wizard-nav">
@@ -2380,10 +2493,13 @@
       </div>
     </div>
 
+    <button class="vault-new-high-dia-btn" id="vault-new-high-dia-btn">✨ New High Dia (no session needed)</button>
+
     <div class="vault-filter-row" id="vault-filter-row">
       <div class="chip active" data-vault-filter="all">All</div>
       <div class="chip" data-vault-filter="notes">📝 Notes</div>
       <div class="chip" data-vault-filter="audio">🎙️ Audio</div>
+      <div class="chip" data-vault-filter="standalone">💭 Standalone</div>
     </div>
 
     <div id="vault-cosmic"></div>
@@ -3134,31 +3250,30 @@
   // ===== Wizard Navigation =====
   function setupWizard() {
     // Next buttons
-    document.getElementById('wizard-next-1').addEventListener('click', () => goToWizardStep(2));
-    document.getElementById('wizard-next-2').addEventListener('click', () => {
-      // Skip Step 3 (Journey) when editing session data only
+    document.getElementById('wizard-next-1').addEventListener('click', () => {
+      // Session-data-only edit skips Step 2 (Session) → goes to Step 3 (Reflection)
       if (editingSessionDataOnly) {
-        renderReviewSummary();
-        goToWizardStep(4);
-      } else {
         goToWizardStep(3);
+      } else {
+        goToWizardStep(2);
       }
     });
+    document.getElementById('wizard-next-2').addEventListener('click', () => goToWizardStep(3));
     document.getElementById('wizard-next-3').addEventListener('click', () => {
       renderReviewSummary();
       goToWizardStep(4);
     });
     // Back buttons
     document.getElementById('wizard-back-2').addEventListener('click', () => goToWizardStep(1));
-    document.getElementById('wizard-back-3').addEventListener('click', () => goToWizardStep(2));
-    document.getElementById('wizard-back-4').addEventListener('click', () => {
-      // Skip Step 3 (Journey) when editing session data only
+    document.getElementById('wizard-back-3').addEventListener('click', () => {
+      // Session-data-only edit skips Step 2 (Session) → back goes to Step 1
       if (editingSessionDataOnly) {
-        goToWizardStep(2);
+        goToWizardStep(1);
       } else {
-        goToWizardStep(3);
+        goToWizardStep(2);
       }
     });
+    document.getElementById('wizard-back-4').addEventListener('click', () => goToWizardStep(3));
   }
 
   function goToWizardStep(step) {
@@ -3168,13 +3283,13 @@
     });
     updateWizardProgress();
     // Update dynamic labels based on edit mode
-    const nextBtn2 = document.getElementById('wizard-next-2');
+    const nextBtn1 = document.getElementById('wizard-next-1');
     const step4Sub = document.getElementById('wizard-step-4-sub');
     if (editingSessionDataOnly) {
-      if (nextBtn2) nextBtn2.textContent = 'Next: Review →';
+      if (nextBtn1) nextBtn1.textContent = "Next: How'd it land? →";
       if (step4Sub) step4Sub.textContent = 'Review your session data changes. High dias (notes, audio, rabbit hole) stay in the Vault.';
     } else {
-      if (nextBtn2) nextBtn2.textContent = "Next: Where'd your mind go? →";
+      if (nextBtn1) nextBtn1.textContent = 'Next: During the session →';
       if (step4Sub) step4Sub.textContent = 'Quick review, then save it to the vault.';
     }
     window.scrollTo(0, 0);
@@ -3821,6 +3936,11 @@
         renderVault();
       });
     });
+    // New High Dia button
+    const newBtn = document.getElementById('vault-new-high-dia-btn');
+    if (newBtn) {
+      newBtn.addEventListener('click', showStandaloneHighDiaEditor);
+    }
   }
 
   function renderVault() {
@@ -3828,9 +3948,9 @@
     const cosmicEl = document.getElementById('vault-cosmic');
     if (!listEl || !cosmicEl) return;
 
-    // Filter sessions that have notes OR audio
+    // Filter sessions that have notes OR audio OR rabbit hole OR are standalone high dias
     let entries = allSessions.filter(s =>
-      (s.notes && s.notes.trim()) || s.audio
+      s.standalone || (s.notes && s.notes.trim()) || s.audio || s.rabbitHole
     );
 
     // Apply filter
@@ -3838,13 +3958,16 @@
       entries = entries.filter(s => s.notes && s.notes.trim());
     } else if (currentVaultFilter === 'audio') {
       entries = entries.filter(s => s.audio);
+    } else if (currentVaultFilter === 'standalone') {
+      entries = entries.filter(s => s.standalone);
     }
 
     // Update count
     const notesCount = allSessions.filter(s => s.notes && s.notes.trim()).length;
     const audioCount = allSessions.filter(s => s.audio).length;
+    const standaloneCount = allSessions.filter(s => s.standalone).length;
     document.getElementById('vault-count').textContent =
-      `${notesCount} note${notesCount === 1 ? '' : 's'} · ${audioCount} audio recording${audioCount === 1 ? '' : 's'}`;
+      `${notesCount} note${notesCount === 1 ? '' : 's'} · ${audioCount} audio · ${standaloneCount} standalone`;
 
     // Toggle visibility based on view mode
     if (currentVaultViewMode === 'cosmic') {
@@ -3889,6 +4012,7 @@
       else if (action === 'delete-rh') deleteVaultRabbitHole(sessionId);
       else if (action === 'add-waypoint') addVaultWaypoint(sessionId);
       else if (action === 'remove-waypoint') removeVaultWaypoint(sessionId, parseInt(btn.dataset.idx));
+      else if (action === 'dave-send') sendVaultDaveMessage(sessionId);
     };
 
     // Event delegation for waypoint input changes
@@ -3898,6 +4022,17 @@
       const idx = parseInt(input.dataset.idx);
       vaultRabbitHoleWaypoints[idx] = input.value;
     };
+
+    // Handle Enter key on Dave chat inputs
+    list.querySelectorAll('input[id^="vault-dave-input-"]').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const sessionId = parseInt(input.id.replace('vault-dave-input-', ''));
+          sendVaultDaveMessage(sessionId);
+        }
+      });
+    });
 
     // Wire up header clicks to open the session detail
     list.querySelectorAll('.vault-entry-header').forEach(header => {
@@ -4015,11 +4150,18 @@
     const dateStr = dt.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) +
       ' ' + dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
-    const typeBadge = s.type ? `<span class="session-type-badge ${TYPE_BADGES[s.type] || 'badge-other'}">${escapeHtml(s.type)}</span>` : '';
+    const isStandalone = !!s.standalone;
+    const typeBadge = isStandalone
+      ? '<span class="session-type-badge badge-other">💭 Standalone</span>'
+      : (s.type ? `<span class="session-type-badge ${TYPE_BADGES[s.type] || 'badge-other'}">${escapeHtml(s.type)}</span>` : '');
     const moodStr = (s.moodBefore || s.moodAfter) ?
       `<span class="vault-entry-mood">${s.moodBefore ? MOOD_EMOJI[s.moodBefore] : '—'} → ${s.moodAfter ? MOOD_EMOJI[s.moodAfter] : '—'}</span>` : '';
     const tags = (s.terpenes || []).slice(0, 2).map(t => renderTerpeneTag(t)).join('') +
                 (s.effects || []).slice(0, 2).map(e => `<span class="tag">${escapeHtml(e)}</span>`).join('');
+    const headerTitle = isStandalone ? (s.strain || '💭 Reflection') : (s.strain || 'Untitled session');
+    const headerHint = isStandalone
+      ? '<span style="font-size:9px;color:var(--text-mute);margin-left:auto">high dia</span>'
+      : '<span style="font-size:9px;color:var(--text-mute);margin-left:auto">session data → edit in History</span>';
 
     // Audio section with delete button
     let audioHtml = '';
@@ -4080,27 +4222,63 @@
       `;
     }
 
+    // Dave chat section
+    const daveChatCount = (s.daveChat || []).length;
+    const daveChatHtml = `
+      <div class="dave-chat-section">
+        <div class="dave-chat-section-header">
+          <span style="font-size:18px">🚪</span>
+          <span class="dave-chat-section-title">Dave Chat</span>
+          ${daveChatCount > 0 ? `<span style="font-size:10px;color:var(--text-mute);margin-left:auto">${daveChatCount} message${daveChatCount === 1 ? '' : 's'}</span>` : ''}
+        </div>
+        <div id="vault-dave-chat-${s.id}">
+          ${renderVaultDaveChat(s)}
+        </div>
+        <div class="dave-chat-input-row">
+          <input type="text" id="vault-dave-input-${s.id}" placeholder="Chat with Dave about this..." autocomplete="off">
+          <button class="dave-chat-send" data-action="dave-send" data-session-id="${s.id}">➤</button>
+        </div>
+      </div>
+    `;
+
     return `
       <div class="vault-entry" data-session-id="${s.id}">
         <div class="vault-entry-header" data-session-id="${s.id}">
           <div class="vault-entry-header-top">
-            <div class="vault-entry-strain">${escapeHtml(s.strain || 'Untitled session')}</div>
+            <div class="vault-entry-strain">${escapeHtml(headerTitle)}</div>
             <div class="vault-entry-date">${dateStr}</div>
           </div>
           <div class="vault-entry-meta">
             ${typeBadge}
             ${moodStr}
             ${tags}
-            <span style="font-size:9px;color:var(--text-mute);margin-left:auto">session data → edit in History</span>
+            ${headerHint}
           </div>
         </div>
         <div class="vault-entry-body">
           ${audioHtml}
           ${noteHtml}
           ${rabbitHoleHtml}
+          ${daveChatHtml}
         </div>
       </div>
     `;
+  }
+
+  // Render the Dave chat mini-view for a vault entry
+  function renderVaultDaveChat(session) {
+    const chat = session.daveChat || [];
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return '<div class="dave-chat-empty">Connect Dave in the Dave tab first to chat about this entry.</div>';
+    }
+    if (chat.length === 0) {
+      return '<div class="dave-chat-empty">Ask Dave about this idea, man. He\'ll help you explore it.</div>';
+    }
+    return chat.map(m => {
+      const cls = m.role === 'user' ? 'user' : 'dave';
+      return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+    }).join('');
   }
 
   function startEditVaultNote(sessionId) {
@@ -4325,6 +4503,160 @@
     } catch (err) {
       console.error(err);
       showToast('Could not clear rabbit hole');
+    }
+  }
+
+  // ===== Standalone High Dia Creation =====
+  function showStandaloneHighDiaEditor() {
+    const content = document.getElementById('modal-content');
+    content.innerHTML = `
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">✨ New High Dia</div>
+          <div style="font-size:12px;color:var(--text-mute);margin-top:4px">A reflection, idea, or note — no smoke session required.</div>
+        </div>
+        <button class="modal-close" id="modal-close-btn">✕</button>
+      </div>
+
+      <div class="high-dia-modal-field">
+        <label>Title (optional)</label>
+        <input type="text" id="hd-title" placeholder="e.g., 3am thought about consciousness">
+      </div>
+
+      <div class="high-dia-modal-field">
+        <label>Notes & Ideas</label>
+        <textarea id="hd-notes" placeholder="What's on your mind, man?"></textarea>
+      </div>
+
+      <div class="high-dia-modal-field">
+        <label>🚀 Rabbit hole start (optional)</label>
+        <input type="text" id="hd-rh-start" placeholder="Where did your mind start?">
+      </div>
+
+      <div class="high-dia-modal-field">
+        <label>🎯 Rabbit hole end (optional)</label>
+        <input type="text" id="hd-rh-end" placeholder="Where did you land?">
+      </div>
+
+      <button class="btn-primary" id="hd-save-btn">Save High Dia</button>
+    `;
+
+    document.getElementById('modal-backdrop').classList.add('open');
+    document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+    document.getElementById('hd-save-btn').addEventListener('click', saveStandaloneHighDia);
+  }
+
+  async function saveStandaloneHighDia() {
+    const title = document.getElementById('hd-title').value.trim();
+    const notes = document.getElementById('hd-notes').value.trim();
+    const rhStart = document.getElementById('hd-rh-start').value.trim();
+    const rhEnd = document.getElementById('hd-rh-end').value.trim();
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60000);
+
+    const rabbitHole = (rhStart || rhEnd) ? { start: rhStart, end: rhEnd, waypoints: [] } : null;
+
+    try {
+      await db.sessions.add({
+        datetime: local.toISOString().slice(0, 16),
+        strain: title || '',
+        type: '',
+        terpenes: [],
+        moodBefore: null,
+        moodAfter: null,
+        effects: [],
+        notes: notes,
+        rabbitHole: rabbitHole,
+        audio: null,
+        audioDuration: null,
+        daveChat: [],
+        standalone: true,
+        createdAt: Date.now()
+      });
+      closeModal();
+      showToast('High Dia saved ✨');
+      refreshAll();
+    } catch (err) {
+      console.error(err);
+      showToast('Could not save high dia');
+    }
+  }
+
+  // ===== Dave Chat on Vault Entries =====
+  async function sendVaultDaveMessage(sessionId) {
+    const input = document.getElementById('vault-dave-input-' + sessionId);
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      showToast('Connect Dave in the Dave tab first');
+      return;
+    }
+
+    const session = allSessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    // Append user message to the session's daveChat
+    const chat = session.daveChat || [];
+    chat.push({ role: 'user', content: text, createdAt: Date.now() });
+    await db.sessions.update(sessionId, { daveChat: chat });
+
+    // Clear input and re-render the chat section with a typing indicator
+    input.value = '';
+    input.disabled = true;
+    const chatContainer = document.getElementById('vault-dave-chat-' + sessionId);
+    if (chatContainer) {
+      chatContainer.innerHTML = renderVaultDaveChat({ daveChat: chat }) +
+        '<div class="msg dave typing" id="vault-dave-typing-' + sessionId + '">Dave is thinking...</div>';
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    try {
+      // Build context: Dave's system prompt + this high dia's content
+      let contextPrompt = DAVE_SYSTEM_PROMPT;
+      contextPrompt += '\n\nThe user is chatting with you about a specific high dia (journal entry). Here\'s the context of what they\'re reflecting on:';
+      if (session.strain) contextPrompt += '\nTitle: ' + session.strain;
+      if (session.notes) contextPrompt += '\nNotes: ' + session.notes;
+      if (session.rabbitHole) {
+        if (session.rabbitHole.start) contextPrompt += '\nRabbit hole start: ' + session.rabbitHole.start;
+        if (session.rabbitHole.end) contextPrompt += '\nRabbit hole end: ' + session.rabbitHole.end;
+        if (session.rabbitHole.waypoints && session.rabbitHole.waypoints.length) {
+          contextPrompt += '\nWaypoints: ' + session.rabbitHole.waypoints.join(' → ');
+        }
+      }
+      contextPrompt += '\n\nUse this context to give thoughtful, personalized responses about THEIR specific idea. Don\'t bring up the context unless relevant.';
+
+      // Build history from the chat
+      const history = chat.map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }]
+      }));
+
+      const result = await streamGemini(history, contextPrompt, apiKey, (partial) => {
+        const typingEl = document.getElementById('vault-dave-typing-' + sessionId);
+        if (typingEl) {
+          typingEl.textContent = partial;
+          typingEl.classList.remove('typing');
+          if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+      });
+
+      // Append Dave's response
+      chat.push({ role: 'dave', content: result.text, createdAt: Date.now() });
+      await db.sessions.update(sessionId, { daveChat: chat });
+      await refreshAll();
+    } catch (err) {
+      console.error(err);
+      const typingEl = document.getElementById('vault-dave-typing-' + sessionId);
+      if (typingEl) {
+        typingEl.textContent = 'Dave stepped out. Try again?';
+        typingEl.style.color = 'var(--danger)';
+      }
+    } finally {
+      input.disabled = false;
+      input.focus();
     }
   }
 
