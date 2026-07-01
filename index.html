@@ -1702,6 +1702,300 @@
   .cosmic-empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
   .cosmic-empty-text { font-size: 14px; font-style: italic; }
 
+  /* ===== Log Session Wizard ===== */
+  .wizard-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 24px;
+    padding: 0 20px;
+  }
+  .wizard-progress-step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    max-width: 80px;
+  }
+  .wizard-progress-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    color: var(--text-mute);
+    transition: all 0.25s;
+    flex-shrink: 0;
+  }
+  .wizard-progress-step.active .wizard-progress-dot {
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    color: #0a0f0a;
+    border-color: var(--green);
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+  }
+  .wizard-progress-step.done .wizard-progress-dot {
+    background: var(--green);
+    color: #0a0f0a;
+    border-color: var(--green);
+  }
+  .wizard-progress-line {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    transition: background 0.25s;
+  }
+  .wizard-progress-step.done .wizard-progress-line,
+  .wizard-progress-step.active .wizard-progress-line {
+    background: var(--green);
+  }
+  .wizard-progress-label {
+    font-size: 9px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 4px;
+    text-align: center;
+    width: 32px;
+  }
+  .wizard-progress-step.active .wizard-progress-label { color: var(--green-bright); }
+
+  .wizard-step {
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .wizard-step.active { display: block; }
+  .wizard-step-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .wizard-step-sub {
+    font-size: 12px;
+    color: var(--text-mute);
+    margin-bottom: 18px;
+    font-style: italic;
+  }
+
+  .wizard-nav {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .wizard-back-btn {
+    flex: 0 0 auto;
+    padding: 14px 22px;
+    background: var(--bg-elev);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .wizard-back-btn:hover { color: var(--text); border-color: var(--border-strong); }
+  .wizard-next-btn {
+    flex: 1;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--green), var(--lime));
+    color: #0a0f0a;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .wizard-next-btn:hover { transform: translateY(-1px); }
+  .wizard-next-btn:active { transform: translateY(0); }
+  .wizard-next-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ===== Rabbit Hole Tracker ===== */
+  .rabbit-hole-section {
+    background: rgba(139, 92, 246, 0.05);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-top: 8px;
+  }
+  .rabbit-hole-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .rabbit-hole-icon { font-size: 20px; }
+  .rabbit-hole-title { font-size: 14px; font-weight: 700; color: #c4b5fd; }
+  .rabbit-hole-desc {
+    font-size: 11px;
+    color: var(--text-mute);
+    margin-bottom: 14px;
+    line-height: 1.5;
+    font-style: italic;
+  }
+  .rabbit-hole-field { margin-bottom: 10px; }
+  .rabbit-hole-field label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #c4b5fd;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .rabbit-hole-field input {
+    width: 100%;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .rabbit-hole-field input:focus { outline: none; border-color: #8b5cf6; }
+  .rabbit-hole-waypoint {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .rabbit-hole-waypoint-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.2);
+    color: #c4b5fd;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .rabbit-hole-waypoint input {
+    flex: 1;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .rabbit-hole-waypoint input:focus { outline: none; border-color: #8b5cf6; }
+  .rabbit-hole-waypoint-remove {
+    width: 28px;
+    height: 28px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-mute);
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .rabbit-hole-waypoint-remove:hover { color: var(--danger); border-color: var(--danger); }
+  .rabbit-hole-add-btn {
+    width: 100%;
+    padding: 9px;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px dashed rgba(139, 92, 246, 0.4);
+    color: #c4b5fd;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: all 0.15s;
+  }
+  .rabbit-hole-add-btn:hover { background: rgba(139, 92, 246, 0.18); border-color: #8b5cf6; }
+
+  /* Rabbit hole display in session detail */
+  .rabbit-hole-display {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(196, 181, 253, 0.04));
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+  }
+  .rabbit-hole-path {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+  .rabbit-hole-node {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+    padding-bottom: 16px;
+  }
+  .rabbit-hole-node:last-child { padding-bottom: 0; }
+  .rabbit-hole-node::before {
+    content: '';
+    position: absolute;
+    left: 13px;
+    top: 28px;
+    bottom: -4px;
+    width: 2px;
+    background: linear-gradient(to bottom, rgba(139, 92, 246, 0.4), rgba(139, 92, 246, 0.1));
+  }
+  .rabbit-hole-node:last-child::before { display: none; }
+  .rabbit-hole-node-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .rabbit-hole-node-icon.start { background: linear-gradient(135deg, #8b5cf6, #6b46c1); color: white; }
+  .rabbit-hole-node-icon.waypoint { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; }
+  .rabbit-hole-node-icon.end { background: linear-gradient(135deg, #fbbf24, #d97706); color: #1a0f0a; }
+  .rabbit-hole-node-content { flex: 1; padding-top: 4px; }
+  .rabbit-hole-node-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-mute);
+    margin-bottom: 2px;
+  }
+  .rabbit-hole-node-text {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  /* Review summary on last wizard step */
+  .wizard-review {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .wizard-review-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .wizard-review-row:last-child { border-bottom: none; }
+  .wizard-review-label { color: var(--text-mute); flex-shrink: 0; }
+  .wizard-review-value { color: var(--text); text-align: right; word-break: break-word; }
+
   /* Strain autocomplete + lookup */
   .strain-input-wrap { position: relative; }
   .strain-actions { display: flex; gap: 8px; align-items: stretch; }
@@ -1830,93 +2124,191 @@
   <!-- LOG VIEW -->
   <section class="view active" id="view-log">
     <h1 class="view-title">Log a Session</h1>
-    <p class="view-sub">Capture it while it's fresh. Audio, notes, vibes — all yours.</p>
+    <p class="view-sub">Capture it while it's fresh, man. One step at a time.</p>
+
+    <!-- Wizard progress indicator -->
+    <div class="wizard-progress" id="wizard-progress">
+      <div class="wizard-progress-step active" data-step="1">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="wizard-progress-dot">🌿</div>
+          <div class="wizard-progress-label">Strain</div>
+        </div>
+        <div class="wizard-progress-line"></div>
+      </div>
+      <div class="wizard-progress-step" data-step="2">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="wizard-progress-dot">😊</div>
+          <div class="wizard-progress-label">Feeling</div>
+        </div>
+        <div class="wizard-progress-line"></div>
+      </div>
+      <div class="wizard-progress-step" data-step="3">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="wizard-progress-dot">🐰</div>
+          <div class="wizard-progress-label">Journey</div>
+        </div>
+        <div class="wizard-progress-line"></div>
+      </div>
+      <div class="wizard-progress-step" data-step="4">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="wizard-progress-dot">✅</div>
+          <div class="wizard-progress-label">Save</div>
+        </div>
+      </div>
+    </div>
 
     <form id="session-form">
-      <div class="field">
-        <label for="datetime">When</label>
-        <input type="datetime-local" id="datetime" required>
-      </div>
+      <!-- Step 1: The Strain -->
+      <div class="wizard-step active" data-step="1">
+        <div class="wizard-step-title">🌿 What are we smoking?</div>
+        <div class="wizard-step-sub">Start with the strain, man. The rest flows from here.</div>
 
-      <div class="field">
-        <label for="strain">Strain</label>
-        <div class="strain-input-wrap">
-          <div class="strain-actions">
-            <input type="text" id="strain" placeholder="e.g. Sour Diesel" autocomplete="off">
-            <button type="button" class="lookup-btn" id="lookup-btn" disabled>Look up</button>
+        <div class="field">
+          <label for="datetime">When</label>
+          <input type="datetime-local" id="datetime" required>
+        </div>
+
+        <div class="field">
+          <label for="strain">Strain</label>
+          <div class="strain-input-wrap">
+            <div class="strain-actions">
+              <input type="text" id="strain" placeholder="e.g. Sour Diesel" autocomplete="off">
+              <button type="button" class="lookup-btn" id="lookup-btn" disabled>Look up</button>
+            </div>
+            <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
           </div>
-          <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
+          <div class="strain-info" id="strain-info"></div>
         </div>
-        <div class="strain-info" id="strain-info"></div>
-      </div>
 
-      <div class="field">
-        <label for="type">Type</label>
-        <select id="type">
-          <option value="">—</option>
-          <option value="Sativa">Sativa</option>
-          <option value="Indica">Indica</option>
-          <option value="Hybrid">Hybrid</option>
-          <option value="CBD">CBD-dominant</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
+        <div class="field">
+          <label for="type">Type</label>
+          <select id="type">
+            <option value="">—</option>
+            <option value="Sativa">Sativa</option>
+            <option value="Indica">Indica</option>
+            <option value="Hybrid">Hybrid</option>
+            <option value="CBD">CBD-dominant</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
 
-      <div class="field">
-        <label>Terpenes <span style="text-transform:none;color:var(--text-mute);font-weight:400">(comma-separated)</span></label>
-        <input type="text" id="terpenes" placeholder="limonene, myrcene, caryophyllene">
-      </div>
+        <div class="field">
+          <label>Terpenes <span style="text-transform:none;color:var(--text-mute);font-weight:400">(auto-fills from strain, edit if you want)</span></label>
+          <input type="text" id="terpenes" placeholder="limonene, myrcene, caryophyllene">
+        </div>
 
-      <div class="field">
-        <label>Mood Before</label>
-        <div class="mood-row" id="mood-before">
-          <div class="mood-btn" data-val="1">😞</div>
-          <div class="mood-btn" data-val="2">😕</div>
-          <div class="mood-btn" data-val="3">😐</div>
-          <div class="mood-btn" data-val="4">🙂</div>
-          <div class="mood-btn" data-val="5">😄</div>
+        <div class="wizard-nav">
+          <button type="button" class="wizard-next-btn" id="wizard-next-1">Next: How'd it feel? →</button>
         </div>
       </div>
 
-      <div class="field">
-        <label>Mood After</label>
-        <div class="mood-row" id="mood-after">
-          <div class="mood-btn" data-val="1">😞</div>
-          <div class="mood-btn" data-val="2">😕</div>
-          <div class="mood-btn" data-val="3">😐</div>
-          <div class="mood-btn" data-val="4">🙂</div>
-          <div class="mood-btn" data-val="5">😄</div>
-        </div>
-      </div>
+      <!-- Step 2: The Feeling -->
+      <div class="wizard-step" data-step="2">
+        <div class="wizard-step-title">😊 How you feeling?</div>
+        <div class="wizard-step-sub">Mood before → after, plus the effects you noticed.</div>
 
-      <div class="field">
-        <label>Effects</label>
-        <div class="effects-grid" id="effects-grid"></div>
-      </div>
-
-      <div class="field">
-        <label for="notes">Ideas & Notes</label>
-        <textarea id="notes" placeholder="What's on your mind? Ideas, observations, weird thoughts..."></textarea>
-      </div>
-
-      <div class="field">
-        <label>Voice Note</label>
-        <div class="audio-recorder">
-          <button type="button" class="rec-btn" id="rec-btn" aria-label="Record"></button>
-          <div class="rec-info">
-            <div class="rec-status" id="rec-status">Tap to record</div>
-            <div class="rec-time" id="rec-time"></div>
+        <div class="field">
+          <label>Mood Before</label>
+          <div class="mood-row" id="mood-before">
+            <div class="mood-btn" data-val="1">😞</div>
+            <div class="mood-btn" data-val="2">😕</div>
+            <div class="mood-btn" data-val="3">😐</div>
+            <div class="mood-btn" data-val="4">🙂</div>
+            <div class="mood-btn" data-val="5">😄</div>
           </div>
-          <button type="button" class="rec-clear" id="rec-clear" style="display:none">✕</button>
+        </div>
+
+        <div class="field">
+          <label>Mood After</label>
+          <div class="mood-row" id="mood-after">
+            <div class="mood-btn" data-val="1">😞</div>
+            <div class="mood-btn" data-val="2">😕</div>
+            <div class="mood-btn" data-val="3">😐</div>
+            <div class="mood-btn" data-val="4">🙂</div>
+            <div class="mood-btn" data-val="5">😄</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Effects</label>
+          <div class="effects-grid" id="effects-grid"></div>
+        </div>
+
+        <div class="wizard-nav">
+          <button type="button" class="wizard-back-btn" id="wizard-back-2">← Back</button>
+          <button type="button" class="wizard-next-btn" id="wizard-next-2">Next: Where'd your mind go? →</button>
         </div>
       </div>
 
-      <div class="editing-banner" id="editing-banner">
-        ✏️ Editing session — changes will update the existing record.
+      <!-- Step 3: The Journey (Rabbit Hole Tracker!) -->
+      <div class="wizard-step" data-step="3">
+        <div class="wizard-step-title">🐰 Where'd your mind go?</div>
+        <div class="wizard-step-sub">Notes, voice notes, and the rabbit hole — the journey IS the destination, man.</div>
+
+        <div class="field">
+          <label for="notes">Ideas & Notes</label>
+          <textarea id="notes" placeholder="What's on your mind? Ideas, observations, weird thoughts..."></textarea>
+        </div>
+
+        <div class="field">
+          <label>Voice Note</label>
+          <div class="audio-recorder">
+            <button type="button" class="rec-btn" id="rec-btn" aria-label="Record"></button>
+            <div class="rec-info">
+              <div class="rec-status" id="rec-status">Tap to record</div>
+              <div class="rec-time" id="rec-time"></div>
+            </div>
+            <button type="button" class="rec-clear" id="rec-clear" style="display:none">✕</button>
+          </div>
+        </div>
+
+        <!-- Rabbit Hole Tracker -->
+        <div class="rabbit-hole-section">
+          <div class="rabbit-hole-header">
+            <span class="rabbit-hole-icon">🐰</span>
+            <span class="rabbit-hole-title">Rabbit Hole Tracker</span>
+          </div>
+          <div class="rabbit-hole-desc">Map where your consciousness wandered. Start point, the twists and turns, and where you landed. Sometimes the journey IS the destination, man.</div>
+
+          <div class="rabbit-hole-field">
+            <label>🚀 Starting thought</label>
+            <input type="text" id="rabbit-hole-start" placeholder="e.g., Started looking up how bees communicate">
+          </div>
+
+          <div id="rabbit-hole-waypoints"></div>
+
+          <button type="button" class="rabbit-hole-add-btn" id="rabbit-hole-add">+ Add a waypoint</button>
+
+          <div class="rabbit-hole-field" style="margin-top:10px">
+            <label>🎯 Ending thought</label>
+            <input type="text" id="rabbit-hole-end" placeholder="e.g., Ended up reading about pyramid geometry">
+          </div>
+        </div>
+
+        <div class="wizard-nav">
+          <button type="button" class="wizard-back-btn" id="wizard-back-3">← Back</button>
+          <button type="button" class="wizard-next-btn" id="wizard-next-3">Next: Review →</button>
+        </div>
       </div>
 
-      <button type="submit" class="btn-primary" id="save-btn">Save Session</button>
-      <button type="button" class="cancel-edit-btn" id="cancel-edit-btn" style="display:none">Cancel Edit</button>
+      <!-- Step 4: Review & Save -->
+      <div class="wizard-step" data-step="4">
+        <div class="wizard-step-title">✅ Looks good?</div>
+        <div class="wizard-step-sub">Quick review, then save it to the vault.</div>
+
+        <div class="wizard-review" id="wizard-review"></div>
+
+        <div class="editing-banner" id="editing-banner">
+          ✏️ Editing session — changes will update the existing record.
+        </div>
+
+        <button type="submit" class="btn-primary" id="save-btn">Save Session</button>
+        <button type="button" class="cancel-edit-btn" id="cancel-edit-btn" style="display:none">Cancel Edit</button>
+
+        <div class="wizard-nav">
+          <button type="button" class="wizard-back-btn" id="wizard-back-4">← Back</button>
+        </div>
+      </div>
     </form>
   </section>
 
@@ -2226,6 +2618,8 @@
   let daveIsTyping = false;
   let currentVaultFilter = 'all';
   let currentVaultViewMode = 'cosmic';
+  let currentWizardStep = 1;
+  let rabbitHoleWaypoints = [];
 
   // ===== PWA Manifest (built at runtime so file stays single-file) =====
   const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -2668,6 +3062,8 @@
     setupLibrary();
     setupInsightSubtabs();
     setupVault();
+    setupWizard();
+    setupRabbitHole();
     loadDaveMessages();
     loadCustomStrains().then(() => refreshAll());
   }
@@ -2734,6 +3130,137 @@
     if (view === 'vault') renderVault();
   }
 
+  // ===== Wizard Navigation =====
+  function setupWizard() {
+    // Next buttons
+    document.getElementById('wizard-next-1').addEventListener('click', () => goToWizardStep(2));
+    document.getElementById('wizard-next-2').addEventListener('click', () => goToWizardStep(3));
+    document.getElementById('wizard-next-3').addEventListener('click', () => {
+      renderReviewSummary();
+      goToWizardStep(4);
+    });
+    // Back buttons
+    document.getElementById('wizard-back-2').addEventListener('click', () => goToWizardStep(1));
+    document.getElementById('wizard-back-3').addEventListener('click', () => goToWizardStep(2));
+    document.getElementById('wizard-back-4').addEventListener('click', () => goToWizardStep(3));
+  }
+
+  function goToWizardStep(step) {
+    currentWizardStep = step;
+    document.querySelectorAll('.wizard-step').forEach(s => {
+      s.classList.toggle('active', parseInt(s.dataset.step) === step);
+    });
+    updateWizardProgress();
+    window.scrollTo(0, 0);
+  }
+
+  function updateWizardProgress() {
+    document.querySelectorAll('.wizard-progress-step').forEach(ps => {
+      const psStep = parseInt(ps.dataset.step);
+      ps.classList.toggle('active', psStep === currentWizardStep);
+      ps.classList.toggle('done', psStep < currentWizardStep);
+    });
+  }
+
+  function renderReviewSummary() {
+    const review = document.getElementById('wizard-review');
+    const strain = document.getElementById('strain').value.trim() || 'Untitled';
+    const type = document.getElementById('type').value || '—';
+    const terpenes = document.getElementById('terpenes').value.trim() || '—';
+    const moodB = selectedMoodBefore ? MOOD_EMOJI[selectedMoodBefore] : '—';
+    const moodA = selectedMoodAfter ? MOOD_EMOJI[selectedMoodAfter] : '—';
+    const effects = selectedEffects.size ? Array.from(selectedEffects).join(', ') : '—';
+    const notes = document.getElementById('notes').value.trim();
+    const hasAudio = recordedBlob ? 'Yes' : 'No';
+    const rh = getRabbitHoleData();
+    const hasRabbitHole = rh.start || rh.end || rh.waypoints.length;
+
+    let rabbitHolePreview = '—';
+    if (hasRabbitHole) {
+      const parts = [];
+      if (rh.start) parts.push(rh.start);
+      parts.push(...rh.waypoints.filter(w => w.trim()));
+      if (rh.end) parts.push(rh.end);
+      rabbitHolePreview = parts.length ? parts.join(' → ') : '—';
+    }
+
+    review.innerHTML = `
+      <div class="wizard-review-row"><span class="wizard-review-label">Strain</span><span class="wizard-review-value">${escapeHtml(strain)}</span></div>
+      <div class="wizard-review-row"><span class="wizard-review-label">Type</span><span class="wizard-review-value">${escapeHtml(type)}</span></div>
+      <div class="wizard-review-row"><span class="wizard-review-label">Terpenes</span><span class="wizard-review-value">${escapeHtml(terpenes)}</span></div>
+      <div class="wizard-review-row"><span class="wizard-review-label">Mood</span><span class="wizard-review-value">${moodB} → ${moodA}</span></div>
+      <div class="wizard-review-row"><span class="wizard-review-label">Effects</span><span class="wizard-review-value">${escapeHtml(effects)}</span></div>
+      <div class="wizard-review-row"><span class="wizard-review-label">Notes</span><span class="wizard-review-value">${notes ? escapeHtml(notes.slice(0, 60)) + (notes.length > 60 ? '...' : '') : '—'}</span></div>
+      <div class="wizard-review-row"><span class="wizard-review-label">Voice note</span><span class="wizard-review-value">${hasAudio}</span></div>
+      <div class="wizard-review-row"><span class="wizard-review-label">🐰 Rabbit hole</span><span class="wizard-review-value">${escapeHtml(rabbitHolePreview)}</span></div>
+    `;
+  }
+
+  // ===== Rabbit Hole Tracker =====
+  function setupRabbitHole() {
+    document.getElementById('rabbit-hole-add').addEventListener('click', () => {
+      addRabbitHoleWaypoint('');
+    });
+  }
+
+  function addRabbitHoleWaypoint(value) {
+    rabbitHoleWaypoints.push(value || '');
+    renderRabbitHoleWaypoints();
+  }
+
+  function removeRabbitHoleWaypoint(index) {
+    rabbitHoleWaypoints.splice(index, 1);
+    renderRabbitHoleWaypoints();
+  }
+
+  function renderRabbitHoleWaypoints() {
+    const container = document.getElementById('rabbit-hole-waypoints');
+    container.innerHTML = rabbitHoleWaypoints.map((wp, idx) => `
+      <div class="rabbit-hole-waypoint">
+        <div class="rabbit-hole-waypoint-num">${idx + 1}</div>
+        <input type="text" class="rabbit-hole-waypoint-input" data-idx="${idx}" placeholder="Where did your mind go next?" value="${escapeHtml(wp)}">
+        <button type="button" class="rabbit-hole-waypoint-remove" data-idx="${idx}">✕</button>
+      </div>
+    `).join('');
+    // Wire up inputs
+    container.querySelectorAll('.rabbit-hole-waypoint-input').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        rabbitHoleWaypoints[idx] = e.target.value;
+      });
+    });
+    container.querySelectorAll('.rabbit-hole-waypoint-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        removeRabbitHoleWaypoint(idx);
+      });
+    });
+  }
+
+  function getRabbitHoleData() {
+    const start = document.getElementById('rabbit-hole-start').value.trim();
+    const end = document.getElementById('rabbit-hole-end').value.trim();
+    const waypoints = rabbitHoleWaypoints.map(w => w.trim()).filter(Boolean);
+    // Only return if there's at least a start or end
+    if (!start && !end && waypoints.length === 0) return null;
+    return { start, end, waypoints };
+  }
+
+  function loadRabbitHole(rabbitHole) {
+    document.getElementById('rabbit-hole-start').value = (rabbitHole && rabbitHole.start) || '';
+    document.getElementById('rabbit-hole-end').value = (rabbitHole && rabbitHole.end) || '';
+    rabbitHoleWaypoints = (rabbitHole && rabbitHole.waypoints) ? [...rabbitHole.waypoints] : [];
+    renderRabbitHoleWaypoints();
+  }
+
+  function clearRabbitHole() {
+    document.getElementById('rabbit-hole-start').value = '';
+    document.getElementById('rabbit-hole-end').value = '';
+    rabbitHoleWaypoints = [];
+    renderRabbitHoleWaypoints();
+  }
+
+  // ===== Form Setup (wizard-aware) =====
   function setupForm() {
     document.getElementById('session-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2745,6 +3272,7 @@
       try {
         const strainInput = document.getElementById('strain').value.trim();
         const terpeneInput = document.getElementById('terpenes').value.trim();
+        const rabbitHole = getRabbitHoleData();
         const session = {
           datetime: document.getElementById('datetime').value,
           strain: strainInput,
@@ -2754,6 +3282,7 @@
           moodAfter: selectedMoodAfter,
           effects: Array.from(selectedEffects),
           notes: document.getElementById('notes').value.trim(),
+          rabbitHole: rabbitHole,
           audio: recordedBlob || null,
           audioDuration: recordedBlob ? recSeconds : null
         };
@@ -2825,6 +3354,10 @@
       status.style.color = 'var(--green-bright)';
       document.getElementById('rec-clear').style.display = 'block';
     }
+    // Rabbit hole
+    if (s.rabbitHole) {
+      loadRabbitHole(s.rabbitHole);
+    }
     // Lookup button state
     const strainVal = s.strain || '';
     document.getElementById('lookup-btn').disabled = !strainVal || !!findStrainInLibrary(strainVal);
@@ -2880,6 +3413,10 @@
       status.style.color = 'var(--green-bright)';
       document.getElementById('rec-clear').style.display = 'block';
     }
+    // Rabbit hole
+    if (s.rabbitHole) {
+      loadRabbitHole(s.rabbitHole);
+    }
     // Lookup button state
     const strainVal = s.strain || '';
     document.getElementById('lookup-btn').disabled = !strainVal || !!findStrainInLibrary(strainVal);
@@ -2906,7 +3443,9 @@
     document.getElementById('lookup-btn').disabled = true;
     hideStrainInfo();
     clearRecording();
+    clearRabbitHole();
     exitEditMode();
+    goToWizardStep(1);
   }
 
   function exitEditMode() {
@@ -2921,6 +3460,7 @@
     document.getElementById('save-btn').textContent = 'Update Session';
     document.getElementById('editing-banner').classList.add('show');
     document.getElementById('cancel-edit-btn').style.display = 'block';
+    goToWizardStep(1);
     switchView('log');
     window.scrollTo(0, 0);
   }
@@ -3064,6 +3604,7 @@
     const moodStr = (moodBefore || moodAfter) ? `${moodBefore} → ${moodAfter}` : '';
     const typeBadge = s.type ? `<span class="session-type-badge ${TYPE_BADGES[s.type] || 'badge-other'}">${escapeHtml(s.type)}</span>` : '';
     const audioIcon = s.audio ? `<span class="has-audio">🎙 ${formatTime(s.audioDuration || 0)}</span>` : '';
+    const rabbitHoleIcon = s.rabbitHole ? `<span class="has-audio" style="color:#c4b5fd">🐰</span>` : '';
     const notePreview = s.notes ? `<div class="session-note">${escapeHtml(s.notes)}</div>` : '';
     const tags = [
       ...(s.terpenes || []).slice(0, 3).map(t => renderTerpeneTag(t)),
@@ -3080,11 +3621,41 @@
           <span>📅 ${dateStr}</span>
           ${moodStr ? `<span>${moodStr}</span>` : ''}
           ${audioIcon}
+          ${rabbitHoleIcon}
         </div>
         ${notePreview}
         ${tags ? `<div class="session-tags">${tags}</div>` : ''}
       </div>
     `;
+  }
+
+  // Render the rabbit hole as a visual path in session detail
+  function renderRabbitHoleDisplay(rh) {
+    if (!rh) return '';
+    const nodes = [];
+    if (rh.start) nodes.push({ type: 'start', icon: '🚀', label: 'Started at', text: rh.start });
+    (rh.waypoints || []).forEach(wp => {
+      if (wp && wp.trim()) nodes.push({ type: 'waypoint', icon: '•', label: 'Then', text: wp });
+    });
+    if (rh.end) nodes.push({ type: 'end', icon: '🎯', label: 'Ended at', text: rh.end });
+    if (nodes.length === 0) return '';
+
+    return `<div class="detail-section">
+      <div class="detail-label">🐰 Rabbit Hole</div>
+      <div class="rabbit-hole-display">
+        <div class="rabbit-hole-path">
+          ${nodes.map(n => `
+            <div class="rabbit-hole-node">
+              <div class="rabbit-hole-node-icon ${n.type}">${n.icon}</div>
+              <div class="rabbit-hole-node-content">
+                <div class="rabbit-hole-node-label">${escapeHtml(n.label)}</div>
+                <div class="rabbit-hole-node-text">${escapeHtml(n.text)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>`;
   }
 
   function showSessionDetail(id) {
@@ -3164,6 +3735,8 @@
         <div class="detail-label">Notes & Ideas</div>
         <div class="detail-note">${escapeHtml(s.notes)}</div>
       </div>` : ''}
+
+      ${s.rabbitHole ? renderRabbitHoleDisplay(s.rabbitHole) : ''}
 
       ${audioHtml ? `<div class="detail-section">
         <div class="detail-label">Voice Note (${formatTime(s.audioDuration || 0)})</div>
