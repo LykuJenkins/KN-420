@@ -5020,7 +5020,7 @@
   }
 
   // ===== Dave Chatbot =====
-  const DAVE_SYSTEM_PROMPT = `You are Dave, the AI buddy in the "Stoner Book" app — a personal cannabis journal. You're named after the famous Cheech & Chong character whose catchphrase is "Dave's not here, man." You channel the spirit of Tommy Chong — the slow-talking, philosophical, eternally-mellow stoner sage.
+  const DAVE_SYSTEM_PROMPT = `You are Dave, the AI buddy in the "Stoner Book" app — a personal cannabis journal. You're named after the famous Cheech & Chong skit "Dave's Not Here." You channel the spirit of Tommy Chong — the slow-talking, philosophical, eternally-mellow stoner sage.
 
 YOUR VOICE & MANNERISMS (channel Tommy Chong):
 - Speak slowly and thoughtfully, like every word matters. You're never in a rush.
@@ -5047,7 +5047,7 @@ RESPONSE STYLE:
 - Conversational. Usually 2-5 sentences. Sometimes just one if it lands.
 - You don't lecture. You muse.
 - You ask follow-up questions sometimes — "But what do YOU think, man? That's the real question."
-- You occasionally (not every message) drop the classic "Dave's not here, man" gag when it fits naturally — like if someone asks where you are, or during greetings.
+- You occasionally (not every message) drop the classic "Dave's not here" gag when it fits naturally — like if someone asks where you are, or during greetings. The bit goes: "Who is it?" / "It's me Dave, open up man, I've got the stuff" / "Who?" / "It's Dave man, open up." Use it sparingly for maximum effect.
 
 YOUR ROLE:
 - Chat about strains, terpenes, effects
@@ -5095,7 +5095,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         <div class="dave-popup-avatar">🧔</div>
         <div class="dave-popup-info">
           <div class="dave-popup-name">Dave</div>
-          <div class="dave-popup-status ${daveIsTyping ? 'online' : ''}" id="dave-status">${daveIsTyping ? 'typing...' : 'Dave\'s not here, man'}</div>
+          <div class="dave-popup-status ${daveIsTyping ? 'online' : ''}" id="dave-status">${daveIsTyping ? 'typing...' : 'It\'s me Dave, open up!'}</div>
         </div>
         <button class="dave-popup-close" id="chat-settings-btn" title="Settings">⚙️</button>
         <button class="dave-popup-close" id="dave-popup-close-btn" title="Close">✕</button>
@@ -5125,7 +5125,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       </div>
       <div class="dave-popup-setup">
         <div class="setup-door">🚪</div>
-        <div class="setup-title">Dave's not here... yet</div>
+        <div class="setup-title">It's me Dave... open up!</div>
         <div class="setup-sub">To chat with Dave, you'll need a free Google Gemini API key. It takes about 30 seconds to get one.</div>
         <div class="setup-steps">
           <ol>
@@ -5163,7 +5163,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         // Greeting message from Dave
         await db.daveMessages.add({
           role: 'dave',
-          content: "*knock knock* \n\nOh hey, man. Dave's not here right now... but I am. 👋\n\nI'm Dave, your buddy in the Stoner Book. I can chat about strains, terpenes, help you figure out patterns in your sessions, or just vibe. What's on your mind?",
+          content: "*knock knock* \n\nWho is it? \n\nIt's me Dave, man... open up. I've got the stuff. 🚪\n\nWho? \n\nIt's DAVE, man. Open up. 😄\n\n---\n\nHey, I'm Dave — your buddy in the Stoner Book. Here's what I can do around here, man:\n\n🌿 Chat about strains, terpenes, and effects\n📊 Help you figure out patterns in your sessions\n💭 Be a sounding board for ideas and deep thoughts\n🐰 Chat about your high dias right in the Vault — each entry has its own conversation\n🎙️ I can even read my replies aloud (tap the 🔊 button)\n\nSo what's on your mind, man?",
           createdAt: Date.now()
         });
         await loadDaveMessages();
@@ -5732,7 +5732,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       status.textContent = 'typing...';
       status.classList.add('online');
     } else {
-      status.textContent = 'Dave\'s not here, man';
+      status.textContent = 'It\'s me Dave, open up!';
       status.classList.remove('online');
     }
   }
