@@ -1519,6 +1519,189 @@
     margin-bottom: 4px;
   }
 
+  /* ===== Cosmic Vault View ===== */
+  .vault-view-toggle {
+    display: flex;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+    margin-bottom: 16px;
+    width: fit-content;
+    margin-left: auto;
+  }
+  .vault-view-btn {
+    background: none;
+    border: none;
+    color: var(--text-mute);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .vault-view-btn.active {
+    background: var(--bg-card);
+    color: var(--green-bright);
+  }
+
+  .vault-cosmic {
+    background: radial-gradient(ellipse at 50% 100%, #1f1208 0%, #120a05 40%, #080502 100%);
+    border-radius: var(--radius);
+    padding: 24px 16px 16px;
+    min-height: 420px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  /* Campfire glow at the bottom */
+  .vault-cosmic::before {
+    content: '';
+    position: absolute;
+    bottom: -120px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 250px;
+    background: radial-gradient(ellipse, rgba(251, 191, 36, 0.18) 0%, rgba(217, 119, 6, 0.06) 40%, transparent 70%);
+    pointer-events: none;
+    animation: firelight 4s ease-in-out infinite;
+  }
+  /* Subtle star dots */
+  .vault-cosmic::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 80% 20%, rgba(255,255,255,0.25), transparent),
+      radial-gradient(1px 1px at 30% 80%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 90% 50%, rgba(255,255,255,0.15), transparent),
+      radial-gradient(1px 1px at 10% 60%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.15), transparent);
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  @keyframes firelight {
+    0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+    50% { opacity: 0.7; transform: translateX(-50%) scale(1.05); }
+  }
+
+  .cosmic-orbs-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    min-height: 280px;
+    padding: 10px 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cosmic-orb {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.3s ease;
+    text-align: center;
+    padding: 6px;
+    border: 1px solid rgba(255,255,255,0.08);
+    vertical-align: top;
+    position: relative;
+    overflow: hidden;
+    color: rgba(255,255,255,0.95);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    animation: float 4s ease-in-out infinite;
+  }
+  .cosmic-orb:hover {
+    transform: scale(1.12);
+    z-index: 10;
+    box-shadow: 0 0 30px currentColor;
+  }
+  .cosmic-orb-icon { font-size: 18px; margin-bottom: 2px; }
+  .cosmic-orb-name {
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+    opacity: 0.9;
+  }
+  .cosmic-orb-date { font-size: 8px; opacity: 0.6; margin-top: 1px; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  /* Giant glowing Vibe Record button */
+  .vibe-record-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin: 24px auto 8px;
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fde047 0%, #fbbf24 40%, #f59e0b 70%, #d97706 100%);
+    border: 2px solid rgba(253, 224, 71, 0.5);
+    color: #1a0f0a;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow:
+      0 0 40px rgba(251, 191, 36, 0.5),
+      0 0 80px rgba(251, 191, 36, 0.25),
+      inset 0 2px 8px rgba(255,255,255,0.3);
+    animation: glow-pulse 3s ease-in-out infinite;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    transition: transform 0.2s;
+    position: relative;
+    z-index: 1;
+  }
+  .vibe-record-btn:hover { transform: scale(1.05); }
+  .vibe-record-btn:active { transform: scale(0.95); }
+  .vibe-record-btn .vibe-icon { font-size: 32px; line-height: 1; }
+  .vibe-record-btn .vibe-label { font-size: 13px; }
+  .vibe-record-btn .vibe-sub { font-size: 9px; opacity: 0.7; font-weight: 600; }
+
+  @keyframes glow-pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 40px rgba(251, 191, 36, 0.5),
+        0 0 80px rgba(251, 191, 36, 0.25),
+        inset 0 2px 8px rgba(255,255,255,0.3);
+    }
+    50% {
+      box-shadow:
+        0 0 60px rgba(251, 191, 36, 0.7),
+        0 0 120px rgba(251, 191, 36, 0.35),
+        inset 0 2px 8px rgba(255,255,255,0.3);
+    }
+  }
+
+  .cosmic-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-mute);
+    position: relative;
+    z-index: 1;
+  }
+  .cosmic-empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+  .cosmic-empty-text { font-size: 14px; font-style: italic; }
+
   /* Strain autocomplete + lookup */
   .strain-input-wrap { position: relative; }
   .strain-actions { display: flex; gap: 8px; align-items: stretch; }
@@ -1794,15 +1977,24 @@
 
   <!-- VAULT VIEW -->
   <section class="view" id="view-vault">
-    <h1 class="view-title">The High Dia Vault</h1>
-    <p class="view-sub" id="vault-count">Your audio recordings & idea notes</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div>
+        <h1 class="view-title" style="margin-bottom:2px">The High Dia Vault</h1>
+        <p class="view-sub" id="vault-count" style="margin-bottom:0">Your audio recordings & idea notes</p>
+      </div>
+      <div class="vault-view-toggle">
+        <button class="vault-view-btn active" data-view-mode="cosmic">✨ Cosmic</button>
+        <button class="vault-view-btn" data-view-mode="list">📋 List</button>
+      </div>
+    </div>
 
-    <div class="vault-filter-row">
+    <div class="vault-filter-row" id="vault-filter-row">
       <div class="chip active" data-vault-filter="all">All</div>
       <div class="chip" data-vault-filter="notes">📝 Notes</div>
       <div class="chip" data-vault-filter="audio">🎙️ Audio</div>
     </div>
 
+    <div id="vault-cosmic"></div>
     <div id="vault-list"></div>
   </section>
 </main>
@@ -2033,6 +2225,7 @@
   let daveMessages = [];
   let daveIsTyping = false;
   let currentVaultFilter = 'all';
+  let currentVaultViewMode = 'cosmic';
 
   // ===== PWA Manifest (built at runtime so file stays single-file) =====
   const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -3010,6 +3203,7 @@
 
   // ===== The High Dia Vault =====
   function setupVault() {
+    // Filter chips
     document.querySelectorAll('.vault-filter-row .chip').forEach(chip => {
       chip.addEventListener('click', () => {
         document.querySelectorAll('.vault-filter-row .chip').forEach(c => c.classList.remove('active'));
@@ -3018,11 +3212,21 @@
         renderVault();
       });
     });
+    // View mode toggle
+    document.querySelectorAll('.vault-view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.vault-view-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentVaultViewMode = btn.dataset.viewMode;
+        renderVault();
+      });
+    });
   }
 
   function renderVault() {
-    const list = document.getElementById('vault-list');
-    if (!list) return;
+    const listEl = document.getElementById('vault-list');
+    const cosmicEl = document.getElementById('vault-cosmic');
+    if (!listEl || !cosmicEl) return;
 
     // Filter sessions that have notes OR audio
     let entries = allSessions.filter(s =>
@@ -3042,6 +3246,19 @@
     document.getElementById('vault-count').textContent =
       `${notesCount} note${notesCount === 1 ? '' : 's'} · ${audioCount} audio recording${audioCount === 1 ? '' : 's'}`;
 
+    // Toggle visibility based on view mode
+    if (currentVaultViewMode === 'cosmic') {
+      listEl.style.display = 'none';
+      cosmicEl.style.display = 'block';
+      renderVaultCosmic(entries, cosmicEl);
+    } else {
+      listEl.style.display = 'block';
+      cosmicEl.style.display = 'none';
+      renderVaultList(entries, listEl);
+    }
+  }
+
+  function renderVaultList(entries, list) {
     if (entries.length === 0) {
       list.innerHTML = `
         <div class="empty-state">
@@ -3074,11 +3291,108 @@
         showSessionDetail(sessionId);
       });
     });
+  }
 
-    // Revoke old audio object URLs when re-rendering
-    list.querySelectorAll('audio').forEach(audio => {
-      // URL will be cleaned up when modal closes or page re-renders
+  // ===== Cosmic Vault View =====
+  // Mood → color mapping (warm campfire palette per Dave's vision)
+  const MOOD_ORB_COLORS = {
+    1: { bg: 'radial-gradient(circle at 35% 30%, #6b46c1, #4c2d8f)', glow: 'rgba(139, 92, 246, 0.5)' },  // deep purple
+    2: { bg: 'radial-gradient(circle at 35% 30%, #9b6dd4, #7b4eb0)', glow: 'rgba(155, 109, 212, 0.5)' }, // muted purple
+    3: { bg: 'radial-gradient(circle at 35% 30%, #d4a574, #b08552)', glow: 'rgba(212, 165, 116, 0.4)' }, // neutral amber
+    4: { bg: 'radial-gradient(circle at 35% 30%, #fbbf24, #d97706)', glow: 'rgba(251, 191, 36, 0.6)' },  // warm amber
+    5: { bg: 'radial-gradient(circle at 35% 30%, #fde047, #fbbf24)', glow: 'rgba(253, 224, 71, 0.7)' }   // bright gold
+  };
+  const DEFAULT_ORB_COLOR = MOOD_ORB_COLORS[3];
+
+  // Mood → size mapping (bigger = more excited, per Dave)
+  const MOOD_ORB_SIZES = {
+    1: 68, 2: 78, 3: 88, 4: 104, 5: 120
+  };
+  const DEFAULT_ORB_SIZE = 88;
+
+  function getOrbStyle(session) {
+    const mood = session.moodAfter || session.moodBefore || 3;
+    const colors = MOOD_ORB_COLORS[mood] || DEFAULT_ORB_COLOR;
+    let size = MOOD_ORB_SIZES[mood] || DEFAULT_ORB_SIZE;
+    // Slight boost for longer notes (more content = more weight)
+    if (session.notes) {
+      const noteLen = session.notes.length;
+      if (noteLen > 200) size += 10;
+      else if (noteLen > 100) size += 6;
+      else if (noteLen > 50) size += 3;
+    }
+    // Audio entries slightly bigger (more substance)
+    if (session.audio) size += 4;
+    // Cap at 140
+    size = Math.min(size, 140);
+    return { size, colors };
+  }
+
+  function renderVaultCosmic(entries, container) {
+    if (entries.length === 0) {
+      container.innerHTML = `
+        <div class="vault-cosmic">
+          <div class="cosmic-empty">
+            <div class="cosmic-empty-icon">🌌</div>
+            <div class="cosmic-empty-text">The vault is quiet, man... ${currentVaultFilter === 'audio' ? 'record a voice note' : currentVaultFilter === 'notes' ? 'jot down an idea' : 'log your first vibe'} to fill the cosmos.</div>
+          </div>
+          <button class="vibe-record-btn" id="vibe-record-empty">
+            <span class="vibe-icon">🌿</span>
+            <span class="vibe-label">Vibe Record</span>
+            <span class="vibe-sub">tap to begin</span>
+          </button>
+        </div>
+      `;
+      document.getElementById('vibe-record-empty').addEventListener('click', () => {
+        switchView('log');
+      });
+      return;
+    }
+
+    const orbsHtml = entries.map((s, idx) => {
+      const { size, colors } = getOrbStyle(s);
+      const icon = s.audio ? '🎙️' : '📝';
+      const dt = new Date(s.datetime);
+      const dateStr = (dt.getMonth() + 1) + '/' + dt.getDate();
+      const strainName = (s.strain || 'Untitled').split(' ')[0];
+      // Stagger the float animation delay so orbs don't bob in sync
+      const delay = (idx * 0.3) % 4;
+      return `<div class="cosmic-orb"
+          data-session-id="${s.id}"
+          style="width:${size}px;height:${size}px;background:${colors.bg};box-shadow:0 0 ${size/3}px ${colors.glow};animation-delay:${delay}s;color:${colors.glow}"
+          title="${escapeHtml(s.strain || 'Untitled')} · ${dt.toLocaleDateString()}">
+        <div class="cosmic-orb-icon">${icon}</div>
+        <div class="cosmic-orb-name">${escapeHtml(strainName)}</div>
+        <div class="cosmic-orb-date">${dateStr}</div>
+      </div>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="vault-cosmic">
+        <div class="cosmic-orbs-container">${orbsHtml}</div>
+        <button class="vibe-record-btn" id="vibe-record">
+          <span class="vibe-icon">🌿</span>
+          <span class="vibe-label">Vibe Record</span>
+          <span class="vibe-sub">log a new one</span>
+        </button>
+      </div>
+    `;
+
+    // Wire up orb clicks → open session detail
+    container.querySelectorAll('.cosmic-orb').forEach(orb => {
+      orb.addEventListener('click', () => {
+        const sessionId = parseInt(orb.dataset.sessionId);
+        showSessionDetail(sessionId);
+      });
     });
+
+    // Wire up the Vibe Record button
+    const vibeBtn = document.getElementById('vibe-record');
+    if (vibeBtn) {
+      vibeBtn.addEventListener('click', () => {
+        switchView('log');
+      });
+    }
   }
 
   function renderVaultEntry(s) {
