@@ -3303,6 +3303,11 @@
     setupWizard();
     setupRabbitHole();
     setupDaveFab();
+    // Preload browser TTS voices (they load async in some browsers)
+    if ('speechSynthesis' in window) {
+      speechSynthesis.getVoices();
+      speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+    }
     loadDaveMessages();
     loadCustomStrains().then(() => {
       refreshAll();
@@ -5493,7 +5498,10 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     }
   }
 
-  // ===== Text-to-Speech (Gemini TTS) =====
+  // ===== Text-to-Speech =====
+  // Two engines: 'browser' (free, Web Speech API, no quota) and 'gemini' (premium, uses API quota)
+
+  // Gemini TTS voices (only used if engine = 'gemini')
   const DAVE_VOICES = [
     { id: 'Charon', label: 'Charon — deep male (default)', desc: 'Chill, laid-back' },
     { id: 'Puck',   label: 'Puck — cheerful male',         desc: 'Upbeat, friendly' },
@@ -5504,7 +5512,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     { id: 'Leda',   label: 'Leda — youthful',              desc: 'Young, neutral' }
   ];
 
-  // In-memory audio cache: message index → { blobUrl, audioEl }
+  // In-memory audio cache: message index → { audioEl } (only for Gemini TTS)
   const daveAudioCache = new Map();
   let currentlyPlayingBtn = null;
   let currentlyPlayingAudio = null;
@@ -5513,17 +5521,157 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     return localStorage.getItem('dave_voice') || 'Charon';
   }
 
+  function getTTSEngine() {
+    return localStorage.getItem('dave_tts_engine') || 'browser';
+  }
+
+  function setTTSEngine(engine) {
+    localStorage.setItem('dave_tts_engine', engine);
+  }
+
+  // Browser TTS settings
+  function getBrowserTTSVoiceURI() {
+    return localStorage.getItem('dave_browser_voice_uri') || '';
+  }
+
+  function getBrowserTTSPitch() {
+    return parseFloat(localStorage.getItem('dave_browser_pitch') || '0.8'); // lower = deeper
+  }
+
+  function getBrowserTTSRate() {
+    return parseFloat(localStorage.getItem('dave_browser_rate') || '0.9'); // slower = chill
+  }
+
+  // Get available browser voices, filtered to find male-sounding ones
+  function getBrowserVoices() {
+    if (!('speechSynthesis' in window)) return [];
+    const voices = speechSynthesis.getVoices();
+    // Try to identify male voices by name (common patterns across OSes)
+    const maleHints = ['male', 'daniel', 'alex', 'fred', 'tom', 'david', 'mark', 'george',
+                       'james', 'arthur', 'oliver', 'thomas', 'rishi', 'man', 'guy'];
+    const femaleHints = ['female', 'samantha', 'victoria', 'susan', 'karen', 'moira',
+                         'tessa', 'fiona', 'woman', 'zira', 'hazel'];
+    const male = [];
+    const other = [];
+    voices.forEach(v => {
+      const name = v.name.toLowerCase();
+      const isFemale = femaleHints.some(h => name.includes(h));
+      const isMale = maleHints.some(h => name.includes(h));
+      if (isMale && !isFemale) {
+        male.push({ uri: v.voiceURI, label: v.name + ' (' + v.lang + ')', gender: 'male' });
+      } else if (!isFemale) {
+        other.push({ uri: v.voiceURI, label: v.name + ' (' + v.lang + ')', gender: '?' });
+      }
+    });
+    // Male voices first, then others, then female excluded
+    return [...male, ...other];
+  }
+
+  // Speak text using the browser's built-in speech synthesis (FREE, no API quota)
+  function speakWithBrowserTTS(text, btn) {
+    if (!('speechSynthesis' in window)) {
+      showToast('Browser does not support speech synthesis', 3000);
+      return;
+    }
+    // Stop anything currently playing
+    stopAllAudio();
+
+    // Clean text (strip markdown)
+    let cleanText = text
+      .replace(/^\*+|\*+$/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/^>\s+/gm, '')
+      .replace(/[\u{1F300}-\u{1F9FF}]/gu, '') // strip emojis (some engines stumble)
+      .trim();
+
+    // Apply length limit
+    const limit = getTTSLengthLimit();
+    if (cleanText.length > limit) {
+      cleanText = cleanText.slice(0, limit).trim() + '. That\'s the gist of it, man.';
+    }
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+
+    // Pick the voice
+    const voices = speechSynthesis.getVoices();
+    const savedURI = getBrowserTTSVoiceURI();
+    let selectedVoice = null;
+
+    if (savedURI) {
+      selectedVoice = voices.find(v => v.voiceURI === savedURI);
+    }
+    if (!selectedVoice) {
+      // Auto-pick a male voice — look for known male voice names
+      const maleHints = ['daniel', 'alex', 'fred', 'tom', 'david', 'mark', 'george',
+                         'james', 'arthur', 'oliver', 'rishi'];
+      selectedVoice = voices.find(v => {
+        const name = v.name.toLowerCase();
+        return maleHints.some(h => name.includes(h));
+      });
+    }
+    if (!selectedVoice && voices.length > 0) {
+      // Fallback: first English voice
+      selectedVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+    }
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+
+    // Lower pitch + slower rate for the chill Tommy Chong vibe
+    utterance.pitch = getBrowserTTSPitch();
+    utterance.rate = getBrowserTTSRate();
+    utterance.volume = 1.0;
+
+    // Update UI
+    currentlyPlayingBtn = btn;
+    btn.classList.add('playing');
+    btn.textContent = '⏸';
+    const status = document.getElementById('dave-status');
+    if (status) {
+      status.textContent = 'speaking...';
+      status.classList.add('speaking');
+    }
+
+    utterance.onend = () => {
+      btn.classList.remove('playing');
+      btn.textContent = '🔊';
+      currentlyPlayingBtn = null;
+      updateDaveStatus();
+    };
+
+    utterance.onerror = (e) => {
+      console.error('Speech error:', e);
+      btn.classList.remove('playing');
+      btn.textContent = '🔊';
+      currentlyPlayingBtn = null;
+      updateDaveStatus();
+      if (e.error !== 'interrupted' && e.error !== 'canceled') {
+        showToast('Could not play speech', 3000);
+      }
+    };
+
+    speechSynthesis.speak(utterance);
+  }
+
   async function toggleSpeakMessage(idx, btn) {
     // If this button is currently playing, stop
     if (btn.classList.contains('playing')) {
       stopAllAudio();
       return;
     }
-    // Stop anything else currently playing
-    stopAllAudio();
 
     const msg = daveMessages[idx];
     if (!msg) return;
+
+    // Browser TTS — free, no quota, instant
+    if (getTTSEngine() === 'browser') {
+      speakWithBrowserTTS(msg.content, btn);
+      return;
+    }
+
+    // Gemini TTS — premium quality, uses API quota
+    // Stop anything else currently playing
+    stopAllAudio();
 
     // Check cache
     const cached = daveAudioCache.get(idx);
@@ -5537,7 +5685,6 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     btn.textContent = '⏳';
     try {
       const audioEl = await generateDaveSpeech(msg.content);
-      // Cache it
       daveAudioCache.set(idx, { audioEl });
       btn.classList.remove('loading');
       btn.textContent = '🔊';
@@ -5546,13 +5693,15 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       console.error(err);
       btn.classList.remove('loading');
       btn.textContent = '🔊';
-      let msg = 'Could not generate audio';
+      let errMsg = 'Could not generate audio';
       if (err.message && err.message.toLowerCase().includes('api key')) {
-        msg = 'API key issue — check settings';
+        errMsg = 'API key issue — check settings';
       } else if (err.message && err.message.toLowerCase().includes('not found')) {
-        msg = 'TTS model not available for this key';
+        errMsg = 'TTS model not available for this key';
+      } else if (err.message && err.message.toLowerCase().includes('quota')) {
+        errMsg = 'Audio quota hit — try switching to Browser TTS in settings';
       }
-      showToast(msg, 3500);
+      showToast(errMsg, 3500);
     }
   }
 
@@ -5586,6 +5735,11 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
   }
 
   function stopAllAudio() {
+    // Stop browser TTS
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel();
+    }
+    // Stop Gemini TTS audio
     if (currentlyPlayingAudio) {
       currentlyPlayingAudio.pause();
       currentlyPlayingAudio.currentTime = 0;
@@ -5974,6 +6128,12 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     const shareSessions = getDaveSetting('shareSessions', true);
     const autoPlay = getDaveSetting('autoPlayTTS', false);
     const currentVoice = getDaveVoice();
+    const ttsEngine = getTTSEngine();
+    const browserVoices = getBrowserVoices();
+    const currentBrowserVoice = getBrowserTTSVoiceURI();
+    const currentPitch = getBrowserTTSPitch();
+    const currentRate = getBrowserTTSRate();
+
     content.innerHTML = `
       <div class="modal-header">
         <div class="modal-title">Dave Settings</div>
@@ -5982,18 +6142,68 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
 
       <div class="dave-settings-row">
         <div class="dave-settings-label">
-          <div class="dave-settings-title">Dave's voice</div>
-          <div class="dave-settings-desc">Choose the voice Dave uses when reading messages aloud. Charon (deep male) fits the chill stoner vibe best.</div>
+          <div class="dave-settings-title">🗣️ Text-to-Speech Engine</div>
+          <div class="dave-settings-desc"><strong>Browser TTS (free)</strong> — uses your device's built-in voice. No API quota, works offline, instant. <strong>Gemini TTS</strong> — premium quality but uses your Google API quota. Browser is recommended.</div>
         </div>
-        <select class="voice-select" id="voice-select">
-          ${DAVE_VOICES.map(v => `<option value="${v.id}" ${v.id === currentVoice ? 'selected' : ''}>${escapeHtml(v.label)}</option>`).join('')}
+        <select class="voice-select" id="tts-engine-select">
+          <option value="browser" ${ttsEngine === 'browser' ? 'selected' : ''}>Browser (Free)</option>
+          <option value="gemini" ${ttsEngine === 'gemini' ? 'selected' : ''}>Gemini (Premium)</option>
         </select>
       </div>
+
+      ${ttsEngine === 'browser' ? `
+        <div class="dave-settings-row">
+          <div class="dave-settings-label">
+            <div class="dave-settings-title">Browser Voice</div>
+            <div class="dave-settings-desc">Male voices are listed first. Pick the deepest one for the most Tommy Chong vibe. Available voices depend on your device/OS.</div>
+          </div>
+          <select class="voice-select" id="browser-voice-select">
+            <option value="">Auto (pick male voice)</option>
+            ${browserVoices.map(v => `<option value="${escapeHtml(v.uri)}" ${v.uri === currentBrowserVoice ? 'selected' : ''}>${escapeHtml(v.label)}${v.gender === 'male' ? ' ♂' : ''}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="dave-settings-row">
+          <div class="dave-settings-label">
+            <div class="dave-settings-title">Voice Pitch (deeper = more chill)</div>
+            <div class="dave-settings-desc">Lower pitch = deeper voice. Default 0.8 for that laid-back vibe.</div>
+          </div>
+          <select class="voice-select" id="browser-pitch-select">
+            <option value="0.6" ${currentPitch === 0.6 ? 'selected' : ''}>Very deep (0.6)</option>
+            <option value="0.8" ${currentPitch === 0.8 ? 'selected' : ''}>Deep (0.8) — default</option>
+            <option value="1.0" ${currentPitch === 1.0 ? 'selected' : ''}>Normal (1.0)</option>
+            <option value="1.2" ${currentPitch === 1.2 ? 'selected' : ''}>Higher (1.2)</option>
+          </select>
+        </div>
+
+        <div class="dave-settings-row">
+          <div class="dave-settings-label">
+            <div class="dave-settings-title">Speaking Speed</div>
+            <div class="dave-settings-desc">Slower = more stoned. Default 0.9 for the chill pace.</div>
+          </div>
+          <select class="voice-select" id="browser-rate-select">
+            <option value="0.7" ${currentRate === 0.7 ? 'selected' : ''}>Very slow (0.7)</option>
+            <option value="0.9" ${currentRate === 0.9 ? 'selected' : ''}>Chill (0.9) — default</option>
+            <option value="1.0" ${currentRate === 1.0 ? 'selected' : ''}>Normal (1.0)</option>
+            <option value="1.1" ${currentRate === 1.1 ? 'selected' : ''}>Fast (1.1)</option>
+          </select>
+        </div>
+      ` : `
+        <div class="dave-settings-row">
+          <div class="dave-settings-label">
+            <div class="dave-settings-title">Gemini Voice</div>
+            <div class="dave-settings-desc">Premium AI voices. Charon (deep male) fits the chill stoner vibe best.</div>
+          </div>
+          <select class="voice-select" id="voice-select">
+            ${DAVE_VOICES.map(v => `<option value="${v.id}" ${v.id === currentVoice ? 'selected' : ''}>${escapeHtml(v.label)}</option>`).join('')}
+          </select>
+        </div>
+      `}
 
       <div class="dave-settings-row">
         <div class="dave-settings-label">
           <div class="dave-settings-title">Read Dave's replies aloud automatically</div>
-          <div class="dave-settings-desc">Dave will speak each response as soon as it finishes streaming. Uses extra API calls — off by default.</div>
+          <div class="dave-settings-desc">Dave will speak each response as soon as it finishes streaming. Browser TTS = no quota. Gemini TTS = uses API calls.</div>
         </div>
         <div class="toggle ${autoPlay ? 'on' : ''}" id="toggle-autoplay"></div>
       </div>
@@ -6001,23 +6211,25 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       <div class="dave-settings-row">
         <div class="dave-settings-label">
           <div class="dave-settings-title">Audio length limit</div>
-          <div class="dave-settings-desc">Caps how much text Dave reads aloud per message. Lower = less audio quota used per response. Full text is always visible to read.</div>
+          <div class="dave-settings-desc">Caps how much text Dave reads aloud per message. Full text is always visible to read.</div>
         </div>
         <select class="voice-select" id="tts-length-select">
           <option value="200" ${getTTSLengthLimit() === 200 ? 'selected' : ''}>Short (200 chars)</option>
           <option value="500" ${getTTSLengthLimit() === 500 ? 'selected' : ''}>Medium (500 chars) — default</option>
           <option value="1000" ${getTTSLengthLimit() === 1000 ? 'selected' : ''}>Long (1000 chars)</option>
-          <option value="99999" ${getTTSLengthLimit() === 99999 ? 'selected' : ''}>No limit (uses more quota)</option>
+          <option value="99999" ${getTTSLengthLimit() === 99999 ? 'selected' : ''}>No limit</option>
         </select>
       </div>
 
+      ${ttsEngine === 'gemini' ? `
       <div class="dave-settings-row">
         <div class="dave-settings-label">
-          <div class="dave-settings-title">Reset TTS rate limit</div>
-          <div class="dave-settings-desc">If audio got paused due to hitting Google's quota, tap this to try again. Won't help if the daily limit is reached — that resets at midnight Pacific time.</div>
+          <div class="dave-settings-title">Reset Gemini TTS rate limit</div>
+          <div class="dave-settings-desc">If Gemini audio got paused due to hitting Google's quota, tap this to try again.</div>
         </div>
         <button class="btn-secondary" id="reset-tts-btn" style="flex:none;width:auto;padding:8px 14px">Reset</button>
       </div>
+      ` : ''}
 
       <div class="dave-settings-row">
         <div class="dave-settings-label">
@@ -6051,12 +6263,50 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     document.getElementById('modal-backdrop').classList.add('open');
     document.getElementById('modal-close-btn').addEventListener('click', closeModal);
 
-    document.getElementById('voice-select').addEventListener('change', (e) => {
-      localStorage.setItem('dave_voice', e.target.value);
-      // Clear audio cache since voice changed
-      daveAudioCache.clear();
-      showToast('Voice set to ' + e.target.value);
-    });
+    // TTS engine selector
+    const engineSelect = document.getElementById('tts-engine-select');
+    if (engineSelect) {
+      engineSelect.addEventListener('change', (e) => {
+        setTTSEngine(e.target.value);
+        daveAudioCache.clear();
+        closeModal();
+        showToast(e.target.value === 'browser' ? 'Switched to Browser TTS (free)' : 'Switched to Gemini TTS (premium)');
+        setTimeout(() => showDaveSettings(), 300);
+      });
+    }
+
+    // Browser voice settings (only exist when engine = browser)
+    const browserVoiceSelect = document.getElementById('browser-voice-select');
+    if (browserVoiceSelect) {
+      browserVoiceSelect.addEventListener('change', (e) => {
+        localStorage.setItem('dave_browser_voice_uri', e.target.value);
+        showToast('Browser voice updated');
+      });
+    }
+    const browserPitchSelect = document.getElementById('browser-pitch-select');
+    if (browserPitchSelect) {
+      browserPitchSelect.addEventListener('change', (e) => {
+        localStorage.setItem('dave_browser_pitch', e.target.value);
+        showToast('Pitch updated');
+      });
+    }
+    const browserRateSelect = document.getElementById('browser-rate-select');
+    if (browserRateSelect) {
+      browserRateSelect.addEventListener('change', (e) => {
+        localStorage.setItem('dave_browser_rate', e.target.value);
+        showToast('Speaking speed updated');
+      });
+    }
+
+    // Gemini voice (only exists when engine = gemini)
+    const geminiVoiceSelect = document.getElementById('voice-select');
+    if (geminiVoiceSelect) {
+      geminiVoiceSelect.addEventListener('change', (e) => {
+        localStorage.setItem('dave_voice', e.target.value);
+        daveAudioCache.clear();
+        showToast('Voice set to ' + e.target.value);
+      });
+    }
 
     document.getElementById('toggle-autoplay').addEventListener('click', (e) => {
       const newVal = !autoPlay;
@@ -6071,11 +6321,14 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       showToast('Audio length limit updated');
     });
 
-    document.getElementById('reset-tts-btn').addEventListener('click', () => {
-      daveTTSRateLimited = false;
-      daveTTSLastCallTime = 0;
-      showToast('TTS rate limit reset — try again');
-    });
+    const resetBtn = document.getElementById('reset-tts-btn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        daveTTSRateLimited = false;
+        daveTTSLastCallTime = 0;
+        showToast('TTS rate limit reset — try again');
+      });
+    }
 
     document.getElementById('toggle-share-sessions').addEventListener('click', () => {
       const newVal = !shareSessions;
