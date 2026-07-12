@@ -5334,13 +5334,18 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         body: JSON.stringify({
           model: 'sonar',
           messages: [{ role: 'user', content: 'Say ok' }],
-          max_tokens: 10
+          max_tokens: 16
         })
       });
-      if (!resp.ok) return false;
+      if (!resp.ok) {
+        const errBody = await resp.text();
+        console.warn('API key test failed:', resp.status, errBody);
+        return false;
+      }
       const data = await resp.json();
       return !!(data.choices && data.choices[0]);
     } catch (e) {
+      console.warn('API key test error:', e);
       return false;
     }
   }
