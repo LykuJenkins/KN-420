@@ -6118,10 +6118,10 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Dave error:', err);
       const t = document.getElementById('typing-msg');
       if (t) {
-        t.textContent = 'Dave stepped out for a sec (something went wrong). Try again in a moment.';
+        t.textContent = err.message || 'Dave stepped out for a sec. Try again in a moment.';
         t.classList.remove('typing');
         t.style.color = 'var(--danger)';
       }
@@ -6171,9 +6171,11 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
   async function streamPerplexity(history, systemPrompt, apiKey, onChunk) {
     // Perplexity uses OpenAI-compatible chat completions API
     // Convert Gemini history format to OpenAI messages format
+    // Gemini uses 'model' for assistant, OpenAI/Perplexity uses 'assistant'
     const messages = [{ role: 'system', content: systemPrompt }];
     history.forEach(m => {
-      messages.push({ role: m.role, content: m.parts[0].text });
+      const role = m.role === 'user' ? 'user' : 'assistant';
+      messages.push({ role: role, content: m.parts[0].text });
     });
 
     const resp = await fetch('https://api.perplexity.ai/chat/completions', {
