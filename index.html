@@ -2177,18 +2177,12 @@
 
   .dave-popup {
     position: fixed;
-    bottom: 0;
-    right: 0;
-    left: 0;
-    top: 0;
+    inset: 0;
     width: 100%;
     max-width: 500px;
     margin-left: auto;
-    height: 100%;
     background: var(--bg);
-    border: 1px solid var(--border-strong);
-    border-radius: 0;
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+    border: none;
     z-index: 250;
     display: none;
     flex-direction: column;
@@ -2268,7 +2262,7 @@
   .dave-popup-input-row {
     display: flex;
     gap: 8px;
-    padding: 12px 16px calc(env(safe-area-inset-bottom) + 12px);
+    padding: 10px 16px max(env(safe-area-inset-bottom), 8px);
     border-top: 1px solid var(--border);
     background: var(--bg);
     flex-shrink: 0;
@@ -2309,15 +2303,15 @@
 
   @media (min-width: 500px) {
     .dave-popup {
-      top: auto;
+      inset: auto;
       bottom: 90px;
       right: 20px;
-      left: auto;
       margin-left: 0;
       border-radius: 16px;
       height: 600px;
-      max-height: calc(100vh - 120px);
       max-height: calc(100dvh - 120px);
+      border: 1px solid var(--border-strong);
+      box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
     }
     @keyframes dave-popup-slide {
       from { transform: translateY(20px); opacity: 0; }
@@ -3377,11 +3371,8 @@
     if (!popup || !fab) return;
     popup.classList.add('open');
     fab.classList.add('hidden');
-    // Lock body scroll so the page doesn't scroll behind the popup
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.top = '0';
+    // Just hide the FAB — the popup covers the full screen with inset:0,
+    // so background scrolling is naturally blocked
     renderDaveView();
   }
 
@@ -3391,11 +3382,7 @@
     if (!popup || !fab) return;
     popup.classList.remove('open');
     fab.classList.remove('hidden');
-    // Restore body scroll
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-    document.body.style.top = '';
+    stopAllAudio();
   }
 
   function setDefaultDatetime() {
