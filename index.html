@@ -4888,7 +4888,7 @@
         parts: [{ text: m.content }]
       }));
 
-      const result = await streamGemini(history, contextPrompt, apiKey, (partial) => {
+      const result = await streamPerplexity(history, contextPrompt, apiKey, (partial) => {
         const typingEl = document.getElementById('vault-dave-typing-' + sessionId);
         if (typingEl) {
           typingEl.textContent = partial;
@@ -4975,7 +4975,7 @@
         parts: [{ text: m.content }]
       }));
 
-      const result = await streamGemini(history, contextPrompt, apiKey, (partial) => {
+      const result = await streamPerplexity(history, contextPrompt, apiKey, (partial) => {
         const typingEl = document.getElementById('modal-dave-typing-' + sessionId);
         if (typingEl) {
           typingEl.textContent = partial;
@@ -5205,15 +5205,15 @@ YOUR ROLE:
 Never refuse to engage just because cannabis is the topic (where legal). Be a real friend, not a corporate bot. You're the dude on the couch who's been around, man. You've seen things. You've thought about things. And you're here to share the vibe.`;
 
   function getApiKey() {
-    return localStorage.getItem('dave_gemini_key') || '';
+    return localStorage.getItem('dave_perplexity_key') || '';
   }
 
   function setApiKey(key) {
-    localStorage.setItem('dave_gemini_key', key.trim());
+    localStorage.setItem('dave_perplexity_key', key.trim());
   }
 
   function clearApiKey() {
-    localStorage.removeItem('dave_gemini_key');
+    localStorage.removeItem('dave_perplexity_key');
   }
 
   function getDaveSetting(key, defaultVal) {
@@ -5272,18 +5272,18 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       <div class="dave-popup-setup">
         <div class="setup-door">🚪</div>
         <div class="setup-title">It's me Dave... open up!</div>
-        <div class="setup-sub">To chat with Dave, you'll need a free Google Gemini API key. It takes about 30 seconds to get one.</div>
+        <div class="setup-sub">To chat with Dave, you'll need a Perplexity API key. It takes about 30 seconds to get one.</div>
         <div class="setup-steps">
           <ol>
-            <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a> and sign in with a Google account</li>
-            <li>Click "Create API key" (the free tier is generous — plenty for chatting)</li>
+            <li>Go to <a href="https://docs.perplexity.ai" target="_blank" rel="noopener">Perplexity AI Platform</a> and sign in</li>
+            <li>Generate an API key (starts with "pplx-")</li>
             <li>Copy the key and paste it below</li>
           </ol>
         </div>
-        <input type="password" class="setup-key-input" id="api-key-input" placeholder="Paste your Gemini API key here">
+        <input type="password" class="setup-key-input" id="api-key-input" placeholder="Paste your Perplexity API key here (pplx-...)">
         <div class="setup-error" id="setup-error"></div>
         <button class="setup-connect-btn" id="setup-connect-btn">Connect Dave</button>
-        <div class="setup-privacy">🔒 Your API key is stored only on this device and sent only to Google's Gemini API. It never touches any other server. Clearing your browser data removes it.</div>
+        <div class="setup-privacy">🔒 Your API key is stored only on this device and sent only to Perplexity's API. It never touches any other server. Clearing your browser data removes it.</div>
       </div>
     `;
     document.getElementById('dave-popup-close-btn').addEventListener('click', closeDavePopup);
@@ -5295,8 +5295,8 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         err.textContent = 'Please paste your API key first';
         return;
       }
-      if (!key || key.length < 20) {
-        err.textContent = 'Please paste a valid API key (should be at least 20 characters)';
+      if (!key.startsWith('pplx-')) {
+        err.textContent = 'That doesn\'t look like a Perplexity API key (should start with "pplx-")';
         return;
       }
       const btn = document.getElementById('setup-connect-btn');
@@ -5325,23 +5325,21 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
 
   async function testApiKey(key) {
     try {
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-goog-api-key': key
-          },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: 'Say "ok" in one word.' }] }],
-            generationConfig: { maxOutputTokens: 10 }
-          })
-        }
-      );
+      const resp = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + key
+        },
+        body: JSON.stringify({
+          model: 'sonar',
+          messages: [{ role: 'user', content: 'Say ok' }],
+          max_tokens: 10
+        })
+      });
       if (!resp.ok) return false;
       const data = await resp.json();
-      return !!(data.candidates && data.candidates[0]);
+      return !!(data.choices && data.choices[0]);
     } catch (e) {
       return false;
     }
@@ -5447,7 +5445,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       history.push({ role: 'user', parts: [{ text: '[Continue — pick up exactly where your previous message left off. Don\'t repeat anything, just finish the thought.]' }] });
 
       const apiKey = getApiKey();
-      const result = await streamGemini(history, systemPrompt, apiKey, (partial) => {
+      const result = await streamPerplexity(history, systemPrompt, apiKey, (partial) => {
         typingEl.textContent = partial;
         typingEl.classList.remove('typing');
         scrollChatToBottom();
@@ -5962,7 +5960,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       }));
 
       const apiKey = getApiKey();
-      const result = await streamGemini(history, systemPrompt, apiKey, (partial) => {
+      const result = await streamPerplexity(history, systemPrompt, apiKey, (partial) => {
         typingEl.textContent = partial;
         typingEl.classList.remove('typing');
         scrollChatToBottom();
@@ -6051,22 +6049,26 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     return prompt;
   }
 
-  async function streamGemini(history, systemPrompt, apiKey, onChunk) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse`;
-    const resp = await fetch(url, {
+  async function streamPerplexity(history, systemPrompt, apiKey, onChunk) {
+    // Perplexity uses OpenAI-compatible chat completions API
+    // Convert Gemini history format to OpenAI messages format
+    const messages = [{ role: 'system', content: systemPrompt }];
+    history.forEach(m => {
+      messages.push({ role: m.role, content: m.parts[0].text });
+    });
+
+    const resp = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-goog-api-key': apiKey
+        'Authorization': 'Bearer ' + apiKey
       },
       body: JSON.stringify({
-        contents: history,
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        generationConfig: {
-          temperature: 0.9,
-          maxOutputTokens: 512,
-          topP: 0.95
-        }
+        model: 'sonar',
+        messages: messages,
+        max_tokens: 512,
+        temperature: 0.9,
+        stream: true
       })
     });
 
@@ -6077,7 +6079,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         const parsed = JSON.parse(errBody);
         if (parsed.error && parsed.error.message) {
           msg = parsed.error.message;
-          if (resp.status === 400 && msg.toLowerCase().includes('api key')) {
+          if (resp.status === 401) {
             msg = 'API key invalid or expired. Try re-entering it in settings.';
           } else if (resp.status === 429) {
             msg = 'Rate limit hit — wait a moment and try again.';
@@ -6106,21 +6108,20 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         if (data === '[DONE]') continue;
         try {
           const parsed = JSON.parse(data);
-          const candidate = parsed.candidates && parsed.candidates[0];
-          // Capture finishReason so we can detect truncation
-          if (candidate && candidate.finishReason) {
-            finishReason = candidate.finishReason;
+          const choice = parsed.choices && parsed.choices[0];
+          if (choice && choice.finish_reason) {
+            finishReason = choice.finish_reason;
           }
-          const parts = candidate && candidate.content && candidate.content.parts;
-          if (parts && parts[0] && parts[0].text) {
-            fullText += parts[0].text;
+          const delta = choice && choice.delta;
+          if (delta && delta.content) {
+            fullText += delta.content;
             onChunk(fullText);
           }
         } catch (e) { /* skip non-JSON lines */ }
       }
     }
     // Return both the text and whether it was truncated
-    return { text: fullText, truncated: finishReason === 'MAX_TOKENS' };
+    return { text: fullText, truncated: finishReason === 'length' };
   }
 
   function showDaveSettings() {
@@ -6142,99 +6143,47 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
 
       <div class="dave-settings-row" style="flex-direction:column;align-items:stretch;gap:12px">
         <div class="dave-settings-label">
-          <div class="dave-settings-title">🗣️ Text-to-Speech Engine</div>
-          <div class="dave-settings-desc">Pick how Dave talks. Two options — one's free, one's premium.</div>
-        </div>
-
-        <!-- Browser TTS option card -->
-        <div style="border:2px solid ${ttsEngine === 'browser' ? 'var(--green)' : 'var(--border)'};border-radius:12px;padding:14px;cursor:pointer;background:${ttsEngine === 'browser' ? 'rgba(74, 222, 128, 0.05)' : 'var(--bg-elev)'};transition:all 0.2s" id="tts-card-browser">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-            <div style="flex:1">
-              <div style="font-size:14px;font-weight:700;color:${ttsEngine === 'browser' ? 'var(--green-bright)' : 'var(--text)'}">
-                📱 Natural Language TTS <span style="font-size:9px;background:var(--green);color:#0a0f0a;padding:2px 8px;border-radius:999px;margin-left:6px;font-weight:700">FREE</span>
-              </div>
-              <div style="font-size:11px;color:var(--text-mute);margin-top:4px;line-height:1.5">
-                Uses your device's built-in voice engine. No API quota, works offline, instant playback. Customize pitch and speed for the chill vibe.
-              </div>
-            </div>
-            <div style="width:22px;height:22px;border-radius:50%;border:2px solid ${ttsEngine === 'browser' ? 'var(--green)' : 'var(--border-strong)'};background:${ttsEngine === 'browser' ? 'var(--green)' : 'transparent'};display:grid;place-items:center;flex-shrink:0">
-              ${ttsEngine === 'browser' ? '<span style="color:#0a0f0a;font-size:13px;font-weight:700">✓</span>' : ''}
-            </div>
-          </div>
-        </div>
-
-        <!-- Gemini TTS option card -->
-        <div style="border:2px solid ${ttsEngine === 'gemini' ? 'var(--amber)' : 'var(--border)'};border-radius:12px;padding:14px;cursor:pointer;background:${ttsEngine === 'gemini' ? 'rgba(251, 191, 36, 0.05)' : 'var(--bg-elev)'};transition:all 0.2s" id="tts-card-gemini">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-            <div style="flex:1">
-              <div style="font-size:14px;font-weight:700;color:${ttsEngine === 'gemini' ? 'var(--amber)' : 'var(--text)'}">
-                ✨ Gemini AI TTS <span style="font-size:9px;background:var(--amber);color:#1a0f0a;padding:2px 8px;border-radius:999px;margin-left:6px;font-weight:700">PREMIUM</span>
-              </div>
-              <div style="font-size:11px;color:var(--text-mute);margin-top:4px;line-height:1.5">
-                Google's premium AI voices — more natural and expressive. Uses your Gemini API quota (the same key Dave uses for chat). Higher quality but can hit rate limits.
-              </div>
-            </div>
-            <div style="width:22px;height:22px;border-radius:50%;border:2px solid ${ttsEngine === 'gemini' ? 'var(--amber)' : 'var(--border-strong)'};background:${ttsEngine === 'gemini' ? 'var(--amber)' : 'transparent'};display:grid;place-items:center;flex-shrink:0">
-              ${ttsEngine === 'gemini' ? '<span style="color:#1a0f0a;font-size:13px;font-weight:700">✓</span>' : ''}
-            </div>
-          </div>
+          <div class="dave-settings-title">🗣️ Text-to-Speech</div>
+          <div class="dave-settings-desc">📱 Natural Language TTS — uses your device's built-in voice engine. Free, no API quota, works offline, instant playback. Customize below for the chill vibe.</div>
         </div>
       </div>
 
-      ${ttsEngine === 'browser' ? `
-        <div style="font-size:11px;color:var(--green-bright);font-weight:600;margin:-4px 0 12px;padding:8px 12px;background:rgba(74, 222, 128, 0.08);border-radius:8px">
-          📱 Using Natural Language TTS — free, no quota limits. Customize below:
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">Voice</div>
+          <div class="dave-settings-desc">Male voices are listed first (♂). Pick the deepest one for the most Tommy Chong vibe. Available voices depend on your device/OS.</div>
         </div>
-        <div class="dave-settings-row">
-          <div class="dave-settings-label">
-            <div class="dave-settings-title">Voice</div>
-            <div class="dave-settings-desc">Male voices are listed first (♂). Pick the deepest one for the most Tommy Chong vibe. Available voices depend on your device/OS.</div>
-          </div>
-          <select class="voice-select" id="browser-voice-select">
-            <option value="">Auto (pick male voice)</option>
-            ${browserVoices.map(v => `<option value="${escapeHtml(v.uri)}" ${v.uri === currentBrowserVoice ? 'selected' : ''}>${escapeHtml(v.label)}${v.gender === 'male' ? ' ♂' : ''}</option>`).join('')}
-          </select>
-        </div>
+        <select class="voice-select" id="browser-voice-select">
+          <option value="">Auto (pick male voice)</option>
+          ${browserVoices.map(v => `<option value="${escapeHtml(v.uri)}" ${v.uri === currentBrowserVoice ? 'selected' : ''}>${escapeHtml(v.label)}${v.gender === 'male' ? ' ♂' : ''}</option>`).join('')}
+        </select>
+      </div>
 
-        <div class="dave-settings-row">
-          <div class="dave-settings-label">
-            <div class="dave-settings-title">Voice Pitch (deeper = more chill)</div>
-            <div class="dave-settings-desc">Lower pitch = deeper voice. Default 0.8 for that laid-back vibe.</div>
-          </div>
-          <select class="voice-select" id="browser-pitch-select">
-            <option value="0.6" ${currentPitch === 0.6 ? 'selected' : ''}>Very deep (0.6)</option>
-            <option value="0.8" ${currentPitch === 0.8 ? 'selected' : ''}>Deep (0.8) — default</option>
-            <option value="1.0" ${currentPitch === 1.0 ? 'selected' : ''}>Normal (1.0)</option>
-            <option value="1.2" ${currentPitch === 1.2 ? 'selected' : ''}>Higher (1.2)</option>
-          </select>
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">Voice Pitch (deeper = more chill)</div>
+          <div class="dave-settings-desc">Lower pitch = deeper voice. Default 0.8 for that laid-back vibe.</div>
         </div>
+        <select class="voice-select" id="browser-pitch-select">
+          <option value="0.6" ${currentPitch === 0.6 ? 'selected' : ''}>Very deep (0.6)</option>
+          <option value="0.8" ${currentPitch === 0.8 ? 'selected' : ''}>Deep (0.8) — default</option>
+          <option value="1.0" ${currentPitch === 1.0 ? 'selected' : ''}>Normal (1.0)</option>
+          <option value="1.2" ${currentPitch === 1.2 ? 'selected' : ''}>Higher (1.2)</option>
+        </select>
+      </div>
 
-        <div class="dave-settings-row">
-          <div class="dave-settings-label">
-            <div class="dave-settings-title">Speaking Speed</div>
-            <div class="dave-settings-desc">Slower = more stoned. Default 0.9 for the chill pace.</div>
-          </div>
-          <select class="voice-select" id="browser-rate-select">
-            <option value="0.7" ${currentRate === 0.7 ? 'selected' : ''}>Very slow (0.7)</option>
-            <option value="0.9" ${currentRate === 0.9 ? 'selected' : ''}>Chill (0.9) — default</option>
-            <option value="1.0" ${currentRate === 1.0 ? 'selected' : ''}>Normal (1.0)</option>
-            <option value="1.1" ${currentRate === 1.1 ? 'selected' : ''}>Fast (1.1)</option>
-          </select>
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">Speaking Speed</div>
+          <div class="dave-settings-desc">Slower = more stoned. Default 0.9 for the chill pace.</div>
         </div>
-      ` : `
-        <div style="font-size:11px;color:var(--amber);font-weight:600;margin:-4px 0 12px;padding:8px 12px;background:rgba(251, 191, 36, 0.08);border-radius:8px">
-          ✨ Using Gemini AI TTS — premium quality, uses API quota. Select a voice below:
-        </div>
-        <div class="dave-settings-row">
-          <div class="dave-settings-label">
-            <div class="dave-settings-title">Gemini Voice</div>
-            <div class="dave-settings-desc">Premium AI voices. Charon (deep male) fits the chill stoner vibe best.</div>
-          </div>
-          <select class="voice-select" id="voice-select">
-            ${DAVE_VOICES.map(v => `<option value="${v.id}" ${v.id === currentVoice ? 'selected' : ''}>${escapeHtml(v.label)}</option>`).join('')}
-          </select>
-        </div>
-      `}
+        <select class="voice-select" id="browser-rate-select">
+          <option value="0.7" ${currentRate === 0.7 ? 'selected' : ''}>Very slow (0.7)</option>
+          <option value="0.9" ${currentRate === 0.9 ? 'selected' : ''}>Chill (0.9) — default</option>
+          <option value="1.0" ${currentRate === 1.0 ? 'selected' : ''}>Normal (1.0)</option>
+          <option value="1.1" ${currentRate === 1.1 ? 'selected' : ''}>Fast (1.1)</option>
+        </select>
+      </div>
 
       <div class="dave-settings-row">
         <div class="dave-settings-label">
@@ -6257,20 +6206,10 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         </select>
       </div>
 
-      ${ttsEngine === 'gemini' ? `
-      <div class="dave-settings-row">
-        <div class="dave-settings-label">
-          <div class="dave-settings-title">Reset Gemini TTS rate limit</div>
-          <div class="dave-settings-desc">If Gemini audio got paused due to hitting Google's quota, tap this to try again.</div>
-        </div>
-        <button class="btn-secondary" id="reset-tts-btn" style="flex:none;width:auto;padding:8px 14px">Reset</button>
-      </div>
-      ` : ''}
-
       <div class="dave-settings-row">
         <div class="dave-settings-label">
           <div class="dave-settings-title">Share my sessions with Dave</div>
-          <div class="dave-settings-desc">Lets Dave see your 10 most recent journal entries to give personalized advice. Your data only goes to Google's Gemini API.</div>
+          <div class="dave-settings-desc">Lets Dave see your 10 most recent journal entries to give personalized advice. Your data only goes to Perplexity's API.</div>
         </div>
         <div class="toggle ${shareSessions ? 'on' : ''}" id="toggle-share-sessions"></div>
       </div>
@@ -6292,40 +6231,14 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       </div>
 
       <div style="font-size:11px;color:var(--text-mute);margin-top:20px;line-height:1.5">
-        Chat: Google Gemini (gemini-flash-latest). Voice: Gemini 2.5 Flash TTS (preview). Your API key and messages are stored locally and sent only to Google.
+        Chat: Perplexity AI (sonar model). Voice: Natural Language TTS (browser built-in). Your API key and messages are stored locally and sent only to Perplexity's API.
       </div>
     `;
 
     document.getElementById('modal-backdrop').classList.add('open');
     document.getElementById('modal-close-btn').addEventListener('click', closeModal);
 
-    // TTS engine card selectors
-    const browserCard = document.getElementById('tts-card-browser');
-    if (browserCard) {
-      browserCard.addEventListener('click', () => {
-        if (getTTSEngine() !== 'browser') {
-          setTTSEngine('browser');
-          daveAudioCache.clear();
-          closeModal();
-          showToast('Switched to Natural Language TTS (free)');
-          setTimeout(() => showDaveSettings(), 300);
-        }
-      });
-    }
-    const geminiCard = document.getElementById('tts-card-gemini');
-    if (geminiCard) {
-      geminiCard.addEventListener('click', () => {
-        if (getTTSEngine() !== 'gemini') {
-          setTTSEngine('gemini');
-          daveAudioCache.clear();
-          closeModal();
-          showToast('Switched to Gemini AI TTS (premium)');
-          setTimeout(() => showDaveSettings(), 300);
-        }
-      });
-    }
-
-    // Browser voice settings (only exist when engine = browser)
+    // Browser voice settings
     const browserVoiceSelect = document.getElementById('browser-voice-select');
     if (browserVoiceSelect) {
       browserVoiceSelect.addEventListener('change', (e) => {
@@ -6348,15 +6261,9 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       });
     }
 
-    // Gemini voice (only exists when engine = gemini)
-    const geminiVoiceSelect = document.getElementById('voice-select');
-    if (geminiVoiceSelect) {
-      geminiVoiceSelect.addEventListener('change', (e) => {
-        localStorage.setItem('dave_voice', e.target.value);
-        daveAudioCache.clear();
-        showToast('Voice set to ' + e.target.value);
-      });
-    }
+    // Gemini voice (legacy — no longer shown but kept for backward compat)
+    // const geminiVoiceSelect = document.getElementById('voice-select');
+    // if (geminiVoiceSelect) { ... }
 
     document.getElementById('toggle-autoplay').addEventListener('click', (e) => {
       const newVal = !autoPlay;
@@ -6370,15 +6277,6 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       daveAudioCache.clear();
       showToast('Audio length limit updated');
     });
-
-    const resetBtn = document.getElementById('reset-tts-btn');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        daveTTSRateLimited = false;
-        daveTTSLastCallTime = 0;
-        showToast('TTS rate limit reset — try again');
-      });
-    }
 
     document.getElementById('toggle-share-sessions').addEventListener('click', () => {
       const newVal = !shareSessions;
