@@ -2159,15 +2159,14 @@
     bottom: 0;
     right: 0;
     left: 0;
+    top: 0;
     width: 100%;
     max-width: 500px;
-    height: 100vh;
-    height: 100dvh;
-    max-height: 100vh;
-    max-height: 100dvh;
+    margin-left: auto;
+    height: 100%;
     background: var(--bg);
     border: 1px solid var(--border-strong);
-    border-radius: 16px 16px 0 0;
+    border-radius: 0;
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
     z-index: 250;
     display: none;
@@ -2175,7 +2174,6 @@
     overflow: hidden;
     animation: dave-popup-slide 0.3s ease;
     overscroll-behavior: contain;
-    touch-action: none;
   }
   .dave-popup.open { display: flex; }
   @keyframes dave-popup-slide {
@@ -2223,7 +2221,7 @@
   .dave-popup-messages {
     flex: 1 1 0;
     min-height: 0;
-    overflow-y: auto;
+    overflow-y: scroll;
     overflow-x: hidden;
     padding: 14px 16px;
     display: flex;
@@ -2233,7 +2231,12 @@
     overscroll-behavior: contain;
     touch-action: pan-y;
     position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
   }
+  .dave-popup-messages::-webkit-scrollbar { width: 5px; }
+  .dave-popup-messages::-webkit-scrollbar-track { background: transparent; }
+  .dave-popup-messages::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
   .dave-popup-messages .msg {
     max-width: 85%;
     padding: 9px 13px;
@@ -2285,9 +2288,11 @@
 
   @media (min-width: 500px) {
     .dave-popup {
+      top: auto;
       bottom: 90px;
       right: 20px;
       left: auto;
+      margin-left: 0;
       border-radius: 16px;
       height: 600px;
       max-height: calc(100vh - 120px);
@@ -5258,6 +5263,9 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     setupChatInput();
     document.getElementById('chat-settings-btn').addEventListener('click', showDaveSettings);
     document.getElementById('dave-popup-close-btn').addEventListener('click', closeDavePopup);
+    // Force scroll to bottom after render settles
+    setTimeout(() => scrollChatToBottom(), 100);
+    setTimeout(() => scrollChatToBottom(), 300);
   }
 
   function renderApiKeySetup(content) {
