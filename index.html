@@ -1331,8 +1331,10 @@
     transition: all 0.15s;
     opacity: 0.6;
   }
-  .msg.dave:hover .speak-btn { opacity: 1; }
-  .speak-btn:hover {
+  .msg.dave:hover .speak-btn,
+  .msg.dave:hover .share-vault-btn { opacity: 1; }
+  .speak-btn:hover,
+  .share-vault-btn:hover {
     color: var(--green-bright);
     border-color: var(--green);
     opacity: 1;
@@ -1355,6 +1357,25 @@
   @keyframes pulse-green {
     0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); }
     50% { box-shadow: 0 0 0 4px rgba(74, 222, 128, 0); }
+  }
+
+  /* Share-to-Vault button (next to speak button on Dave messages) */
+  .share-vault-btn {
+    position: absolute;
+    bottom: 6px;
+    right: 38px;
+    width: 26px;
+    height: 26px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--text-mute);
+    cursor: pointer;
+    font-size: 12px;
+    display: grid;
+    place-items: center;
+    transition: all 0.15s;
+    opacity: 0.6;
   }
 
   /* Voice selector */
@@ -5378,10 +5399,11 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       if (m.role === 'user') {
         return `<div class="msg user">${escapeHtml(m.content)}</div>`;
       }
-      // Dave message — add speak button
+      // Dave message — add speak + share buttons
       const btnId = `speak-${m.id || idx}`;
       return `<div class="msg dave" data-msg-idx="${idx}">${escapeHtml(m.content)}
         <button class="speak-btn" data-msg-idx="${idx}" id="${btnId}" title="Read aloud">🔊</button>
+        <button class="share-vault-btn" data-msg-idx="${idx}" title="Save to Vault">📤</button>
       </div>`;
     }).join('');
     // Wire up speak buttons
@@ -5391,8 +5413,63 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         toggleSpeakMessage(idx, btn);
       });
     });
+    // Wire up share-to-vault buttons
+    container.querySelectorAll('.share-vault-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.msgIdx);
+        shareDaveMessageToVault(idx, btn);
+      });
+    });
     // Scroll to bottom (robust across browsers including Edge)
     scrollChatToBottom();
+  }
+
+  // Save a Dave message to the High Dia Vault as a standalone high dia
+  async function shareDaveMessageToVault(idx, btn) {
+    const msg = daveMessages[idx];
+    if (!msg) return;
+
+    // Get the user message that prompted this response (for context)
+    let context = '';
+    if (idx > 0 && daveMessages[idx - 1] && daveMessages[idx - 1].role === 'user') {
+      context = 'You asked: "' + daveMessages[idx - 1].content + '"\n\nDave said:\n';
+    }
+
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60000);
+
+    try {
+      await db.sessions.add({
+        datetime: local.toISOString().slice(0, 16),
+        strain: '💬 Dave Chat',
+        type: '',
+        terpenes: [],
+        moodBefore: null,
+        moodAfter: null,
+        effects: [],
+        notes: context + msg.content,
+        rabbitHole: null,
+        audio: null,
+        audioDuration: null,
+        daveChat: [],
+        standalone: true,
+        createdAt: Date.now()
+      });
+      await refreshAll();
+      showToast('Saved to Vault 📤');
+      // Brief visual feedback on the button
+      const originalText = btn.textContent;
+      btn.textContent = '✓';
+      btn.style.color = 'var(--green-bright)';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.color = '';
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      showToast('Could not save to Vault');
+    }
   }
 
   // Robust scroll-to-bottom that works on all browsers including mobile.
