@@ -2417,6 +2417,7 @@
     </div>
   </div>
   <div class="header-actions">
+    <button class="icon-btn" id="app-settings-btn" title="App Settings">⚙</button>
     <button class="icon-btn" id="export-btn" title="Export backup">⬇</button>
     <button class="icon-btn" id="import-btn" title="Import backup">⬆</button>
     <input type="file" id="import-file" accept="application/json" style="display:none">
@@ -7156,6 +7157,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
 
   // ===== Export / Import =====
   function setupExportImport() {
+    document.getElementById('app-settings-btn').addEventListener('click', showAppSettings);
     document.getElementById('export-btn').addEventListener('click', exportData);
     document.getElementById('import-btn').addEventListener('click', () => {
       document.getElementById('import-file').click();
@@ -7164,6 +7166,126 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
 
     document.getElementById('search-input').addEventListener('input', renderHistory);
     document.getElementById('strain-filter').addEventListener('change', renderHistory);
+  }
+
+  // ===== App Settings Modal =====
+  function showAppSettings() {
+    const content = document.getElementById('modal-content');
+    content.innerHTML = `
+      <div class="modal-header">
+        <div class="modal-title">⚙ App Settings</div>
+        <button class="modal-close" id="modal-close-btn">✕</button>
+      </div>
+
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">🔄 Update App</div>
+          <div class="dave-settings-desc">Forces a hard refresh — clears the cache, downloads the latest version, and reloads the page. Use this if you're not seeing recent updates.</div>
+        </div>
+        <button class="btn-primary" id="update-app-btn" style="flex:none;width:auto;padding:10px 18px;font-size:13px">Update Now</button>
+      </div>
+
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">📦 Export Backup</div>
+          <div class="dave-settings-desc">Download all your sessions, audio, custom strains, and Dave chats as a JSON file.</div>
+        </div>
+        <button class="btn-secondary" id="app-export-btn" style="flex:none;width:auto;padding:8px 14px">Export</button>
+      </div>
+
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">📥 Import Backup</div>
+          <div class="dave-settings-desc">Restore from a previously exported JSON backup file.</div>
+        </div>
+        <button class="btn-secondary" id="app-import-btn" style="flex:none;width:auto;padding:8px 14px">Import</button>
+      </div>
+
+      <div class="dave-settings-row">
+        <div class="dave-settings-label">
+          <div class="dave-settings-title">🗑 Clear All Data</div>
+          <div class="dave-settings-desc">Wipes everything — sessions, strains, Dave chats, and audio. Cannot be undone. Export a backup first!</div>
+        </div>
+        <button class="btn-danger" id="clear-all-btn" style="flex:none;width:auto;padding:8px 14px">Clear All</button>
+      </div>
+
+      <div style="font-size:11px;color:var(--text-mute);margin-top:20px;line-height:1.5">
+        The Stoner Book v1.0 — local-only, no backend. Your data never leaves your device (except when chatting with Dave or looking up strains).
+      </div>
+    `;
+
+    document.getElementById('modal-backdrop').classList.add('open');
+    document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+
+    document.getElementById('update-app-btn').addEventListener('click', forceAppUpdate);
+    document.getElementById('app-export-btn').addEventListener('click', () => { closeModal(); exportData(); });
+    document.getElementById('app-import-btn').addEventListener('click', () => { closeModal(); document.getElementById('import-file').click(); });
+    document.getElementById('clear-all-btn').addEventListener('click', clearAllData);
+  }
+
+  async function forceAppUpdate() {
+    const btn = document.getElementById('update-app-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+    }
+    showToast('Clearing cache and updating...', 3000);
+
+    try {
+      // Unregister all service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+      }
+
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (const name of cacheNames) {
+          await caches.delete(name);
+        }
+      }
+
+      // Wait a moment then hard reload
+      setTimeout(() => {
+        // Force reload from server (not cache)
+        window.location.reload(true);
+      }, 500);
+    } catch (err) {
+      console.error('Update failed:', err);
+      // Still try to reload
+      window.location.reload(true);
+    }
+  }
+
+  async function clearAllData() {
+    if (!confirm('This will PERMANENTLY DELETE all sessions, strains, Dave chats, and audio. This cannot be undone. Are you sure?')) return;
+    if (!confirm('Last chance — really delete everything?')) return;
+    try {
+      await db.sessions.clear();
+      await db.customStrains.clear();
+      await db.daveMessages.clear();
+      localStorage.removeItem('dave_perplexity_key');
+      localStorage.removeItem('dave_elevenlabs_key');
+      localStorage.removeItem('dave_voice');
+      localStorage.removeItem('dave_tts_engine');
+      localStorage.removeItem('dave_browser_voice_uri');
+      localStorage.removeItem('dave_browser_pitch');
+      localStorage.removeItem('dave_browser_rate');
+      localStorage.removeItem('dave_tts_length_limit');
+      localStorage.removeItem('dave_setting_shareSessions');
+      localStorage.removeItem('dave_setting_autoPlayTTS');
+      localStorage.removeItem('dave_elevenlabs_voice');
+      localStorage.removeItem('install-dismissed');
+      closeModal();
+      showToast('All data cleared');
+      setTimeout(() => window.location.reload(true), 1000);
+    } catch (err) {
+      console.error(err);
+      showToast('Could not clear data');
+    }
   }
 
   async function exportData() {
