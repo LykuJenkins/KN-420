@@ -5533,12 +5533,38 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
   }
 
   function getBrowserTTSPitch() {
-    return parseFloat(localStorage.getItem('dave_browser_pitch') || '0.8'); // lower = deeper
+    return parseFloat(localStorage.getItem('dave_browser_pitch') || '0.8');
   }
 
   function getBrowserTTSRate() {
-    return parseFloat(localStorage.getItem('dave_browser_rate') || '0.9'); // slower = chill
+    return parseFloat(localStorage.getItem('dave_browser_rate') || '0.9');
   }
+
+  // ElevenLabs TTS settings
+  function getElevenLabsKey() {
+    return localStorage.getItem('dave_elevenlabs_key') || '';
+  }
+  function setElevenLabsKey(key) {
+    localStorage.setItem('dave_elevenlabs_key', key.trim());
+  }
+  function getElevenLabsVoice() {
+    return localStorage.getItem('dave_elevenlabs_voice') || 'pNInz6obpgDQGcFmaJgB'; // Adam — deep male default
+  }
+  function setElevenLabsVoice(voiceId) {
+    localStorage.setItem('dave_elevenlabs_voice', voiceId);
+  }
+
+  // ElevenLabs premade voices (deep male voices for Dave's vibe)
+  const ELEVENLABS_VOICES = [
+    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam — deep male (default)' },
+    { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni — smooth male' },
+    { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold — gravelly male' },
+    { id: 'pqHfZKP75CvOlQylNhV4', name: 'Bill — mature male' },
+    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh — casual male' },
+    { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Michael — chill male' },
+    { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel — warm male' },
+    { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlie — laid-back male' },
+  ];
 
   // Get available browser voices, filtered to find male-sounding ones
   function getBrowserVoices() {
@@ -5651,6 +5677,87 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     speechSynthesis.speak(utterance);
   }
 
+  // Speak using ElevenLabs API — premium quality, natural AI voices
+  async function speakWithElevenLabs(text, btn) {
+    const elevenKey = getElevenLabsKey();
+    if (!elevenKey) {
+      showToast('Enter your ElevenLabs API key in settings first', 3500);
+      return;
+    }
+
+    stopAllAudio();
+
+    // Clean text
+    let cleanText = text
+      .replace(/^\*+|\*+$/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/^>\s+/gm, '')
+      .trim();
+
+    // Apply length limit
+    const limit = getTTSLengthLimit();
+    if (cleanText.length > limit) {
+      cleanText = cleanText.slice(0, limit).trim() + '. That\'s the gist of it, man.';
+    }
+
+    const voiceId = getElevenLabsVoice();
+
+    btn.classList.add('loading');
+    btn.textContent = '⏳';
+
+    try {
+      const resp = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Accept': 'audio/mpeg',
+            'Content-Type': 'application/json',
+            'xi-api-key': elevenKey
+          },
+          body: JSON.stringify({
+            text: cleanText,
+            model_id: 'eleven_turbo_v2_5',
+            voice_settings: {
+              stability: 0.5,
+              similarity_boost: 0.75,
+              style: 0.2,
+              use_speaker_boost: true
+            }
+          })
+        }
+      );
+
+      if (!resp.ok) {
+        const errBody = await resp.text();
+        let msg = 'ElevenLabs request failed';
+        try {
+          const parsed = JSON.parse(errBody);
+          if (parsed.detail && parsed.detail.status) {
+            msg = parsed.detail.message || msg;
+            if (parsed.detail.status === 401) msg = 'Invalid ElevenLabs API key — check settings';
+            if (parsed.detail.status === 422) msg = 'Voice ID not found — try another voice';
+          }
+        } catch (e) {}
+        throw new Error(msg);
+      }
+
+      // Response is MP3 audio — create a blob URL and play it
+      const audioBlob = await resp.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      btn.classList.remove('loading');
+      btn.textContent = '🔊';
+      playAudio(audio, btn);
+    } catch (err) {
+      console.error(err);
+      btn.classList.remove('loading');
+      btn.textContent = '🔊';
+      showToast(err.message || 'Could not generate ElevenLabs audio', 3500);
+    }
+  }
+
   async function toggleSpeakMessage(idx, btn) {
     // If this button is currently playing, stop
     if (btn.classList.contains('playing')) {
@@ -5661,24 +5768,37 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     const msg = daveMessages[idx];
     if (!msg) return;
 
+    const engine = getTTSEngine();
+
     // Browser TTS — free, no quota, instant
-    if (getTTSEngine() === 'browser') {
+    if (engine === 'browser') {
       speakWithBrowserTTS(msg.content, btn);
       return;
     }
 
-    // Gemini TTS — premium quality, uses API quota
-    // Stop anything else currently playing
-    stopAllAudio();
+    // ElevenLabs TTS — premium quality, uses ElevenLabs quota
+    if (engine === 'elevenlabs') {
+      // Check cache
+      const cached = daveAudioCache.get('el-' + idx);
+      if (cached) {
+        playAudio(cached.audioEl, btn);
+        return;
+      }
+      // Generate and cache
+      const originalBtn = btn;
+      const originalIdx = idx;
+      const audioEl = await speakWithElevenLabs(msg.content, btn);
+      // If audio was returned, cache it (speakWithElevenLabs plays it directly via playAudio)
+      return;
+    }
 
-    // Check cache
+    // Legacy Gemini TTS fallback (shouldn't be reached)
+    stopAllAudio();
     const cached = daveAudioCache.get(idx);
     if (cached) {
       playAudio(cached.audioEl, btn);
       return;
     }
-
-    // Generate audio
     btn.classList.add('loading');
     btn.textContent = '⏳';
     try {
@@ -5691,15 +5811,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       console.error(err);
       btn.classList.remove('loading');
       btn.textContent = '🔊';
-      let errMsg = 'Could not generate audio';
-      if (err.message && err.message.toLowerCase().includes('api key')) {
-        errMsg = 'API key issue — check settings';
-      } else if (err.message && err.message.toLowerCase().includes('not found')) {
-        errMsg = 'TTS model not available for this key';
-      } else if (err.message && err.message.toLowerCase().includes('quota')) {
-        errMsg = 'Audio quota hit — try switching to Browser TTS in settings';
-      }
-      showToast(errMsg, 3500);
+      showToast('Could not generate audio', 3500);
     }
   }
 
@@ -6143,47 +6255,104 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
 
       <div class="dave-settings-row" style="flex-direction:column;align-items:stretch;gap:12px">
         <div class="dave-settings-label">
-          <div class="dave-settings-title">🗣️ Text-to-Speech</div>
-          <div class="dave-settings-desc">📱 Natural Language TTS — uses your device's built-in voice engine. Free, no API quota, works offline, instant playback. Customize below for the chill vibe.</div>
+          <div class="dave-settings-title">🗣️ Text-to-Speech Engine</div>
+          <div class="dave-settings-desc">Pick how Dave talks. One's free, one's premium quality.</div>
+        </div>
+
+        <!-- Browser TTS option card -->
+        <div style="border:2px solid ${ttsEngine === 'browser' ? 'var(--green)' : 'var(--border)'};border-radius:12px;padding:14px;cursor:pointer;background:${ttsEngine === 'browser' ? 'rgba(74, 222, 128, 0.05)' : 'var(--bg-elev)'};transition:all 0.2s" id="tts-card-browser">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700;color:${ttsEngine === 'browser' ? 'var(--green-bright)' : 'var(--text)'}">
+                📱 Natural Language TTS <span style="font-size:9px;background:var(--green);color:#0a0f0a;padding:2px 8px;border-radius:999px;margin-left:6px;font-weight:700">FREE</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-mute);margin-top:4px;line-height:1.5">
+                Uses your device's built-in voice engine. No API quota, works offline, instant playback. Customize pitch and speed for the chill vibe.
+              </div>
+            </div>
+            <div style="width:22px;height:22px;border-radius:50%;border:2px solid ${ttsEngine === 'browser' ? 'var(--green)' : 'var(--border-strong)'};background:${ttsEngine === 'browser' ? 'var(--green)' : 'transparent'};display:grid;place-items:center;flex-shrink:0">
+              ${ttsEngine === 'browser' ? '<span style="color:#0a0f0a;font-size:13px;font-weight:700">✓</span>' : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- ElevenLabs TTS option card -->
+        <div style="border:2px solid ${ttsEngine === 'elevenlabs' ? 'var(--amber)' : 'var(--border)'};border-radius:12px;padding:14px;cursor:pointer;background:${ttsEngine === 'elevenlabs' ? 'rgba(251, 191, 36, 0.05)' : 'var(--bg-elev)'};transition:all 0.2s" id="tts-card-elevenlabs">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700;color:${ttsEngine === 'elevenlabs' ? 'var(--amber)' : 'var(--text)'}">
+                ✨ ElevenLabs AI TTS <span style="font-size:9px;background:var(--amber);color:#1a0f0a;padding:2px 8px;border-radius:999px;margin-left:6px;font-weight:700">PREMIUM</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-mute);margin-top:4px;line-height:1.5">
+                Ultra-natural AI voices — the most human-sounding TTS available. Free tier: 10K chars/month (plenty for Dave's short responses). Get a key at elevenlabs.io.
+              </div>
+            </div>
+            <div style="width:22px;height:22px;border-radius:50%;border:2px solid ${ttsEngine === 'elevenlabs' ? 'var(--amber)' : 'var(--border-strong)'};background:${ttsEngine === 'elevenlabs' ? 'var(--amber)' : 'transparent'};display:grid;place-items:center;flex-shrink:0">
+              ${ttsEngine === 'elevenlabs' ? '<span style="color:#1a0f0a;font-size:13px;font-weight:700">✓</span>' : ''}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="dave-settings-row">
-        <div class="dave-settings-label">
-          <div class="dave-settings-title">Voice</div>
-          <div class="dave-settings-desc">Male voices are listed first (♂). Pick the deepest one for the most Tommy Chong vibe. Available voices depend on your device/OS.</div>
+      ${ttsEngine === 'browser' ? `
+        <div style="font-size:11px;color:var(--green-bright);font-weight:600;margin:-4px 0 12px;padding:8px 12px;background:rgba(74, 222, 128, 0.08);border-radius:8px">
+          📱 Using Natural Language TTS — free, no quota limits. Customize below:
         </div>
-        <select class="voice-select" id="browser-voice-select">
-          <option value="">Auto (pick male voice)</option>
-          ${browserVoices.map(v => `<option value="${escapeHtml(v.uri)}" ${v.uri === currentBrowserVoice ? 'selected' : ''}>${escapeHtml(v.label)}${v.gender === 'male' ? ' ♂' : ''}</option>`).join('')}
-        </select>
-      </div>
-
-      <div class="dave-settings-row">
-        <div class="dave-settings-label">
-          <div class="dave-settings-title">Voice Pitch (deeper = more chill)</div>
-          <div class="dave-settings-desc">Lower pitch = deeper voice. Default 0.8 for that laid-back vibe.</div>
+        <div class="dave-settings-row">
+          <div class="dave-settings-label">
+            <div class="dave-settings-title">Voice</div>
+            <div class="dave-settings-desc">Male voices are listed first (♂). Pick the deepest one for the most Tommy Chong vibe.</div>
+          </div>
+          <select class="voice-select" id="browser-voice-select">
+            <option value="">Auto (pick male voice)</option>
+            ${browserVoices.map(v => `<option value="${escapeHtml(v.uri)}" ${v.uri === currentBrowserVoice ? 'selected' : ''}>${escapeHtml(v.label)}${v.gender === 'male' ? ' ♂' : ''}</option>`).join('')}
+          </select>
         </div>
-        <select class="voice-select" id="browser-pitch-select">
-          <option value="0.6" ${currentPitch === 0.6 ? 'selected' : ''}>Very deep (0.6)</option>
-          <option value="0.8" ${currentPitch === 0.8 ? 'selected' : ''}>Deep (0.8) — default</option>
-          <option value="1.0" ${currentPitch === 1.0 ? 'selected' : ''}>Normal (1.0)</option>
-          <option value="1.2" ${currentPitch === 1.2 ? 'selected' : ''}>Higher (1.2)</option>
-        </select>
-      </div>
-
-      <div class="dave-settings-row">
-        <div class="dave-settings-label">
-          <div class="dave-settings-title">Speaking Speed</div>
-          <div class="dave-settings-desc">Slower = more stoned. Default 0.9 for the chill pace.</div>
+        <div class="dave-settings-row">
+          <div class="dave-settings-label">
+            <div class="dave-settings-title">Voice Pitch (deeper = more chill)</div>
+            <div class="dave-settings-desc">Lower pitch = deeper voice. Default 0.8 for that laid-back vibe.</div>
+          </div>
+          <select class="voice-select" id="browser-pitch-select">
+            <option value="0.6" ${currentPitch === 0.6 ? 'selected' : ''}>Very deep (0.6)</option>
+            <option value="0.8" ${currentPitch === 0.8 ? 'selected' : ''}>Deep (0.8) — default</option>
+            <option value="1.0" ${currentPitch === 1.0 ? 'selected' : ''}>Normal (1.0)</option>
+            <option value="1.2" ${currentPitch === 1.2 ? 'selected' : ''}>Higher (1.2)</option>
+          </select>
         </div>
-        <select class="voice-select" id="browser-rate-select">
-          <option value="0.7" ${currentRate === 0.7 ? 'selected' : ''}>Very slow (0.7)</option>
-          <option value="0.9" ${currentRate === 0.9 ? 'selected' : ''}>Chill (0.9) — default</option>
-          <option value="1.0" ${currentRate === 1.0 ? 'selected' : ''}>Normal (1.0)</option>
-          <option value="1.1" ${currentRate === 1.1 ? 'selected' : ''}>Fast (1.1)</option>
-        </select>
-      </div>
+        <div class="dave-settings-row">
+          <div class="dave-settings-label">
+            <div class="dave-settings-title">Speaking Speed</div>
+            <div class="dave-settings-desc">Slower = more stoned. Default 0.9 for the chill pace.</div>
+          </div>
+          <select class="voice-select" id="browser-rate-select">
+            <option value="0.7" ${currentRate === 0.7 ? 'selected' : ''}>Very slow (0.7)</option>
+            <option value="0.9" ${currentRate === 0.9 ? 'selected' : ''}>Chill (0.9) — default</option>
+            <option value="1.0" ${currentRate === 1.0 ? 'selected' : ''}>Normal (1.0)</option>
+            <option value="1.1" ${currentRate === 1.1 ? 'selected' : ''}>Fast (1.1)</option>
+          </select>
+        </div>
+      ` : ttsEngine === 'elevenlabs' ? `
+        <div style="font-size:11px;color:var(--amber);font-weight:600;margin:-4px 0 12px;padding:8px 12px;background:rgba(251, 191, 36, 0.08);border-radius:8px">
+          ✨ Using ElevenLabs AI TTS — premium quality. Configure below:
+        </div>
+        <div class="dave-settings-row">
+          <div class="dave-settings-label">
+            <div class="dave-settings-title">ElevenLabs API Key</div>
+            <div class="dave-settings-desc">Get a free key at <a href="https://elevenlabs.io" target="_blank" style="color:var(--amber)">elevenlabs.io</a>. Free tier: 10K chars/month. Stored only on your device.</div>
+          </div>
+        </div>
+        <input type="password" class="setup-key-input" id="elevenlabs-key-input" placeholder="Paste your ElevenLabs API key" value="${escapeHtml(getElevenLabsKey())}" style="margin-bottom:10px">
+        <div class="dave-settings-row">
+          <div class="dave-settings-label">
+            <div class="dave-settings-title">ElevenLabs Voice</div>
+            <div class="dave-settings-desc">Premium AI voices. Adam (deep male) fits Dave's vibe best. All are male voices.</div>
+          </div>
+          <select class="voice-select" id="elevenlabs-voice-select">
+            ${ELEVENLABS_VOICES.map(v => `<option value="${v.id}" ${v.id === getElevenLabsVoice() ? 'selected' : ''}>${escapeHtml(v.name)}</option>`).join('')}
+          </select>
+        </div>
+      ` : ''}
 
       <div class="dave-settings-row">
         <div class="dave-settings-label">
@@ -6231,12 +6400,38 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       </div>
 
       <div style="font-size:11px;color:var(--text-mute);margin-top:20px;line-height:1.5">
-        Chat: Perplexity AI (sonar model). Voice: Natural Language TTS (browser built-in). Your API key and messages are stored locally and sent only to Perplexity's API.
+        Chat: Perplexity AI (sonar model). Voice: Natural Language TTS (browser) or ElevenLabs AI (premium). Your API keys are stored locally and sent only to Perplexity and ElevenLabs.
       </div>
     `;
 
     document.getElementById('modal-backdrop').classList.add('open');
     document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+
+    // TTS engine card selectors
+    const browserCard = document.getElementById('tts-card-browser');
+    if (browserCard) {
+      browserCard.addEventListener('click', () => {
+        if (getTTSEngine() !== 'browser') {
+          setTTSEngine('browser');
+          daveAudioCache.clear();
+          closeModal();
+          showToast('Switched to Natural Language TTS (free)');
+          setTimeout(() => showDaveSettings(), 300);
+        }
+      });
+    }
+    const elevenLabsCard = document.getElementById('tts-card-elevenlabs');
+    if (elevenLabsCard) {
+      elevenLabsCard.addEventListener('click', () => {
+        if (getTTSEngine() !== 'elevenlabs') {
+          setTTSEngine('elevenlabs');
+          daveAudioCache.clear();
+          closeModal();
+          showToast('Switched to ElevenLabs AI TTS (premium)');
+          setTimeout(() => showDaveSettings(), 300);
+        }
+      });
+    }
 
     // Browser voice settings
     const browserVoiceSelect = document.getElementById('browser-voice-select');
@@ -6261,9 +6456,23 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
       });
     }
 
-    // Gemini voice (legacy — no longer shown but kept for backward compat)
-    // const geminiVoiceSelect = document.getElementById('voice-select');
-    // if (geminiVoiceSelect) { ... }
+    // ElevenLabs settings
+    const elevenKeyInput = document.getElementById('elevenlabs-key-input');
+    if (elevenKeyInput) {
+      elevenKeyInput.addEventListener('change', (e) => {
+        setElevenLabsKey(e.target.value);
+        daveAudioCache.clear();
+        showToast(e.target.value ? 'ElevenLabs key saved' : 'ElevenLabs key cleared');
+      });
+    }
+    const elevenVoiceSelect = document.getElementById('elevenlabs-voice-select');
+    if (elevenVoiceSelect) {
+      elevenVoiceSelect.addEventListener('change', (e) => {
+        setElevenLabsVoice(e.target.value);
+        daveAudioCache.clear();
+        showToast('ElevenLabs voice updated');
+      });
+    }
 
     document.getElementById('toggle-autoplay').addEventListener('click', (e) => {
       const newVal = !autoPlay;
