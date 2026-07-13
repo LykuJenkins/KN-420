@@ -2192,6 +2192,14 @@
   .dave-popup.open { display: flex; }
   /* Hide bottom nav and FAB when Dave popup is open on mobile */
   .dave-popup.open ~ nav { display: none; }
+  /* Content wrapper must be flex too — otherwise the input box gets pushed off-screen */
+  #dave-popup-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
   @keyframes dave-popup-slide {
     from { transform: translateY(100%); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
