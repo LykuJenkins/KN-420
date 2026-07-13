@@ -4377,10 +4377,10 @@
 
     const orbsHtml = entries.map((s, idx) => {
       const { size, colors } = getOrbStyle(s);
-      const icon = s.audio ? '🎙️' : '📝';
+      const icon = s.audio ? '🎙️' : (s.source === 'dave-chat' ? '💬' : '📝');
       const dt = new Date(s.datetime);
       const dateStr = (dt.getMonth() + 1) + '/' + dt.getDate();
-      const strainName = (s.strain || 'Untitled').split(' ')[0];
+      const strainName = s.source === 'dave-chat' ? 'Dave' : (s.strain || 'Untitled').split(' ')[0];
       // Stagger the float animation delay so orbs don't bob in sync
       const delay = (idx * 0.3) % 4;
       return `<div class="cosmic-orb"
@@ -4428,13 +4428,17 @@
 
     const isStandalone = !!s.standalone;
     const typeBadge = isStandalone
-      ? '<span class="session-type-badge badge-other">💭 Standalone</span>'
+      ? (s.source === 'dave-chat'
+        ? '<span class="session-type-badge badge-other">💬 Dave</span>'
+        : '<span class="session-type-badge badge-other">💭 Standalone</span>')
       : (s.type ? `<span class="session-type-badge ${TYPE_BADGES[s.type] || 'badge-other'}">${escapeHtml(s.type)}</span>` : '');
     const moodStr = (s.moodBefore || s.moodAfter) ?
       `<span class="vault-entry-mood">${s.moodBefore ? MOOD_EMOJI[s.moodBefore] : '—'} → ${s.moodAfter ? MOOD_EMOJI[s.moodAfter] : '—'}</span>` : '';
     const tags = (s.terpenes || []).slice(0, 2).map(t => renderTerpeneTag(t)).join('') +
                 (s.effects || []).slice(0, 2).map(e => `<span class="tag">${escapeHtml(e)}</span>`).join('');
-    const headerTitle = isStandalone ? (s.strain || '💭 Reflection') : (s.strain || 'Untitled session');
+    const headerTitle = isStandalone
+      ? (s.source === 'dave-chat' ? '💬 Dave Chat' : (s.strain || '💭 Reflection'))
+      : (s.strain || 'Untitled session');
     const headerHint = isStandalone
       ? '<span style="font-size:9px;color:var(--text-mute);margin-left:auto">high dia</span>'
       : '<span style="font-size:9px;color:var(--text-mute);margin-left:auto">session data → edit in History</span>';
@@ -5440,7 +5444,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     try {
       await db.sessions.add({
         datetime: local.toISOString().slice(0, 16),
-        strain: '💬 Dave Chat',
+        strain: '',
         type: '',
         terpenes: [],
         moodBefore: null,
@@ -5452,6 +5456,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         audioDuration: null,
         daveChat: [],
         standalone: true,
+        source: 'dave-chat',
         createdAt: Date.now()
       });
       await refreshAll();
