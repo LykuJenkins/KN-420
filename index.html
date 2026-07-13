@@ -2659,7 +2659,7 @@
         </div>
 
         <div class="field">
-          <label>📍 Location</label>
+          <label>✨ Session Vibes</label>
           <div class="location-chips" id="location-chips">
             <div class="location-chip" data-location="🏠 Home">🏠 Home</div>
             <div class="location-chip" data-location="🌳 Outside">🌳 Outside</div>
@@ -3656,7 +3656,7 @@
       <div class="wizard-review-row"><span class="wizard-review-label">Notes</span><span class="wizard-review-value">${notes ? escapeHtml(notes.slice(0, 60)) + (notes.length > 60 ? '...' : '') : '—'}</span></div>
       <div class="wizard-review-row"><span class="wizard-review-label">Voice note</span><span class="wizard-review-value">${hasAudio}</span></div>
       <div class="wizard-review-row"><span class="wizard-review-label">🐰 Rabbit hole</span><span class="wizard-review-value">${escapeHtml(rabbitHolePreview)}</span></div>
-      <div class="wizard-review-row"><span class="wizard-review-label">📍 Location</span><span class="wizard-review-value">${selectedLocation ? escapeHtml(selectedLocation) : '—'}</span></div>
+      <div class="wizard-review-row"><span class="wizard-review-label">✨ Vibes</span><span class="wizard-review-value">${selectedLocation ? escapeHtml(selectedLocation) : '—'}</span></div>
       <div class="wizard-review-row"><span class="wizard-review-label">📸 Photos</span><span class="wizard-review-value">${sessionPhotos.length || '—'}</span></div>
     `;
   }
@@ -4368,7 +4368,7 @@
       </div>` : ''}
 
       ${s.location ? `<div class="detail-section">
-        <div class="detail-label">📍 Location</div>
+        <div class="detail-label">✨ Session Vibes</div>
         <div class="detail-value">${escapeHtml(s.location)}</div>
       </div>` : ''}
 
