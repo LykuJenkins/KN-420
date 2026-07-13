@@ -2853,6 +2853,38 @@
     <div id="vault-cosmic"></div>
     <div id="vault-list"></div>
   </section>
+
+  <!-- TUNES VIEW -->
+  <section class="view" id="view-tunes">
+    <h1 class="view-title">🎵 Tunes</h1>
+    <p class="view-sub">Music for the session, man.</p>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input type="text" id="spotify-search" placeholder="Search for a song, artist, or playlist..." style="flex:1;background:var(--bg-elev);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:var(--radius-sm);font-size:14px;font-family:inherit" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'">
+      <button id="spotify-search-btn" style="background:linear-gradient(135deg,var(--green),var(--lime));color:#0a0f0a;border:none;padding:0 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer">Search</button>
+    </div>
+
+    <div id="spotify-results" style="margin-bottom:20px"></div>
+
+    <div id="spotify-now-playing" style="margin-bottom:20px"></div>
+
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:var(--green-bright);margin-bottom:10px">🎧 Quick Vibes</div>
+      <div id="spotify-quick-vibes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px"></div>
+    </div>
+
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+      <div style="font-size:13px;font-weight:700;color:var(--green-bright);margin-bottom:10px">🔊 Embed a Spotify URL</div>
+      <p style="font-size:12px;color:var(--text-mute);margin-bottom:10px">Paste any Spotify track, album, or playlist URL below:</p>
+      <input type="text" id="spotify-url-input" placeholder="https://open.spotify.com/track/..." style="width:100%;background:var(--bg-elev);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-family:inherit;margin-bottom:10px" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'">
+      <button id="spotify-embed-btn" style="width:100%;padding:10px;background:linear-gradient(135deg,var(--green),var(--lime));color:#0a0f0a;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:700;cursor:pointer">Embed Player</button>
+      <div id="spotify-embed-result" style="margin-top:12px"></div>
+    </div>
+
+    <div style="font-size:11px;color:var(--text-mute);margin-top:16px;line-height:1.5">
+      Spotify embeds play 30-second previews for free accounts. Log in to Spotify in a separate tab for full tracks. The embed uses Spotify's official oEmbed API — no Spotify developer account needed.
+    </div>
+  </section>
 </main>
 
 <!-- Bottom Nav -->
@@ -2876,6 +2908,10 @@
   <button class="nav-btn" data-view="insights">
     <span class="nav-icon">✨</span>
     <span>Insights</span>
+  </button>
+  <button class="nav-btn" data-view="tunes">
+    <span class="nav-icon">🎵</span>
+    <span>Tunes</span>
   </button>
 </nav>
 
@@ -3482,6 +3518,7 @@
     setupWizard();
     setupRabbitHole();
     setupPhotosAndLocation();
+    setupTunes();
     setupDaveFab();
     // Preload browser TTS voices (they load async in some browsers)
     if ('speechSynthesis' in window) {
@@ -3837,6 +3874,109 @@
       }
     }
     renderPhotos();
+  }
+
+  // ===== Tunes (Spotify embeds) =====
+  const SPOTIFY_QUICK_VIBES = [
+    { name: 'Chill Stoner Vibes', url: 'https://open.spotify.com/playlist/37i9dQZF1DX8Sz1gsYZdwj' },
+    { name: 'Reggae Classics', url: 'https://open.spotify.com/playlist/37i9dQZF1DXbTmgAdyQb1F' },
+    { name: 'Lo-Fi Beats', url: 'https://open.spotify.com/playlist/37i9dQZF1DwwUAGE2iCXTi' },
+    { name: 'Pink Floyd', url: 'https://open.spotify.com/artist/0k17h0D3J5VfsdmQ1iZtE9' },
+    { name: 'Bob Marley', url: 'https://open.spotify.com/artist/2QyAWLEpUt2OzjJZEqCCnZ' },
+    { name: 'Snoop Dogg', url: 'https://open.spotify.com/artist/5HJZThfb4AN5k4QrQkUIsR' },
+    { name: 'Cypress Hill', url: 'https://open.spotify.com/artist/4cmA2QDEQ2YxlIgLZH6t3z' },
+    { name: 'Stoner Rock', url: 'https://open.spotify.com/playlist/37i9dQZF1DWZqd5JICZI0u' },
+  ];
+
+  function setupTunes() {
+    // Render quick vibes
+    renderQuickVibes();
+
+    // Search button
+    document.getElementById('spotify-search-btn').addEventListener('click', spotifySearch);
+    document.getElementById('spotify-search').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') spotifySearch();
+    });
+
+    // Embed URL button
+    document.getElementById('spotify-embed-btn').addEventListener('click', embedSpotifyUrl);
+    document.getElementById('spotify-url-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') embedSpotifyUrl();
+    });
+  }
+
+  function renderQuickVibes() {
+    const container = document.getElementById('spotify-quick-vibes');
+    if (!container) return;
+    container.innerHTML = SPOTIFY_QUICK_VIBES.map(v => {
+      const embedUrl = spotifyUrlToEmbed(v.url);
+      return `<div style="cursor:pointer" onclick="document.getElementById('spotify-now-playing').innerHTML='<iframe src=\\'${embedUrl}\\' width=\\'100%\\' height=\\'152\\' frameborder=\\'0\\' allow=\\'encrypted-media\\' allowtransparency=\\'true\\'></iframe>'">
+        <div style="background:var(--bg-elev);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;transition:all 0.15s" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:28px;margin-bottom:4px">🎵</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-dim)">${escapeHtml(v.name)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Convert any Spotify URL to embed URL
+  function spotifyUrlToEmbed(url) {
+    // https://open.spotify.com/track/XXXX → https://open.spotify.com/embed/track/XXXX
+    return url.replace('open.spotify.com/', 'open.spotify.com/embed/');
+  }
+
+  // Search Spotify using their public search (via embed iframe trick)
+  async function spotifySearch() {
+    const query = document.getElementById('spotify-search').value.trim();
+    const resultsDiv = document.getElementById('spotify-results');
+    if (!query) return;
+
+    resultsDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-mute);font-size:13px">Searching Spotify...</div>';
+
+    // Use Spotify's public search URL in an embed
+    // We'll search by opening the search results page in an embed
+    const searchEmbedUrl = `https://open.spotify.com/search/${encodeURIComponent(query)}`;
+
+    resultsDiv.innerHTML = `
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text-mute);margin-bottom:8px">Tap a result to play, or paste any Spotify URL below to embed it:</div>
+      </div>
+      <iframe src="${searchEmbedUrl}" width="100%" height="380" frameborder="0" allow="encrypted-media" allowtransparency="true" style="border-radius:var(--radius-sm)"></iframe>
+      <div style="font-size:11px;color:var(--text-mute);margin-top:8px">Can't see results? Spotify embeds require being logged in to Spotify. Open <a href="${searchEmbedUrl}" target="_blank" style="color:var(--green-bright)">Spotify in a new tab</a> to search and log in.</div>
+    `;
+  }
+
+  // Embed a pasted Spotify URL
+  function embedSpotifyUrl() {
+    const url = document.getElementById('spotify-url-input').value.trim();
+    const resultDiv = document.getElementById('spotify-embed-result');
+    if (!url) {
+      resultDiv.innerHTML = '<div style="color:var(--danger);font-size:12px">Paste a Spotify URL first</div>';
+      return;
+    }
+    if (!url.includes('spotify.com')) {
+      resultDiv.innerHTML = '<div style="color:var(--danger);font-size:12px">That doesn\'t look like a Spotify URL, man</div>';
+      return;
+    }
+
+    const embedUrl = spotifyUrlToEmbed(url);
+    // Determine height based on type
+    let height = '152';
+    if (url.includes('/playlist/')) height = '352';
+    else if (url.includes('/album/')) height = '352';
+    else if (url.includes('/artist/')) height = '352';
+
+    resultDiv.innerHTML = `
+      <iframe src="${embedUrl}" width="100%" height="${height}" frameborder="0" allow="encrypted-media" allowtransparency="true" style="border-radius:var(--radius-sm)"></iframe>
+    `;
+
+    // Also set as now playing
+    document.getElementById('spotify-now-playing').innerHTML = `
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
+        <div style="font-size:12px;font-weight:600;color:var(--green-bright);margin-bottom:8px">▶ Now Playing</div>
+        <iframe src="${embedUrl}" width="100%" height="${height}" frameborder="0" allow="encrypted-media" allowtransparency="true" style="border-radius:var(--radius-sm)"></iframe>
+      </div>
+    `;
   }
 
   function addRabbitHoleWaypoint(value) {
