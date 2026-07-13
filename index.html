@@ -6437,6 +6437,163 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     });
   }
 
+  // Dave logs a session from conversation context
+  async function handleDaveSessionLog(userText, typingEl) {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      typingEl.textContent = 'Connect Dave first, man.';
+      typingEl.classList.remove('typing');
+      typingEl.style.color = 'var(--danger)';
+      daveIsTyping = false;
+      updateDaveStatus();
+      return;
+    }
+
+    typingEl.textContent = 'Dave is logging your session...';
+
+    try {
+      // Build a special prompt to extract session data from the conversation
+      const recentMessages = daveMessages.slice(-20).map(m => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.content
+      }));
+
+      const extractionPrompt = `You are Dave, a chill stoner buddy helping log a smoke session. Look at the recent conversation and extract any session information the user has shared. 
+
+Respond with ONLY a JSON object (no markdown, no backticks, no extra text) with these fields:
+{
+  "strain": "strain name if mentioned, else empty string",
+  "type": "Sativa, Indica, Hybrid, CBD, or empty string",
+  "moodBefore": "number 1-5 if mentioned, else null",
+  "moodAfter": "number 1-5 if mentioned, else null",
+  "effects": ["array of effects mentioned from: Relaxed, Euphoric, Creative, Happy, Sleepy, Hungry, Focused, Giggly, Uplifted, Energetic, Calm, Talkative, Aroused, Tingly, Dreamy, Clear-Headed, Anxiety, Headache, Nauseous, Paranoia, Dry Mouth, Dizzy, Dry Eyes, Couch Lock, Anxious, Fatigue, Brain Fog"],
+  "terpenes": ["array of terpenes mentioned if any"],
+  "location": "location/vibe if mentioned, else empty string",
+  "notes": "any notes, ideas, or thoughts the user shared about the session",
+  "summary": "a 1-2 sentence Dave-style confirmation of what was logged"
+}
+
+If the user hasn't shared any session info yet, respond with: {"error": "no info"}
+Only extract what was actually mentioned. Don't make stuff up.`;
+
+      const messages = [
+        { role: 'system', content: extractionPrompt },
+        ...recentMessages
+      ];
+
+      const resp = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        body: JSON.stringify({
+          model: 'sonar',
+          messages: messages,
+          max_tokens: 500,
+          temperature: 0.3
+        })
+      });
+
+      if (!resp.ok) throw new Error('API request failed');
+
+      const data = await resp.json();
+      let responseText = data.choices[0].message.content.trim();
+
+      // Clean up any markdown wrappers
+      responseText = responseText.replace(/```json\n?/g, '').replace(/```/g, '').trim();
+
+      let sessionData;
+      try {
+        sessionData = JSON.parse(responseText);
+      } catch (e) {
+        // If JSON parse fails, just show Dave's response as text
+        typingEl.textContent = responseText || 'Dave couldn\'t parse that, man. Try telling him what you smoked first, then say "log session".';
+        typingEl.classList.remove('typing');
+        daveIsTyping = false;
+        updateDaveStatus();
+        // Save as regular Dave message
+        await db.daveMessages.add({ role: 'dave', content: responseText, createdAt: Date.now() });
+        await loadDaveMessages();
+        renderChatMessages();
+        return;
+      }
+
+      if (sessionData.error) {
+        const msg = 'You haven\'t told me about your session yet, man. Tell me what you smoked, how you\'re feeling, and what effects you noticed — then say "log session" and I\'ll save it for you.';
+        typingEl.textContent = msg;
+        typingEl.classList.remove('typing');
+        await db.daveMessages.add({ role: 'dave', content: msg, createdAt: Date.now() });
+        await loadDaveMessages();
+        renderChatMessages();
+        daveIsTyping = false;
+        updateDaveStatus();
+        return;
+      }
+
+      // Create the session
+      const now = new Date();
+      const offset = now.getTimezoneOffset();
+      const local = new Date(now.getTime() - offset * 60000);
+
+      const validEffects = (sessionData.effects || []).filter(e => ALL_EFFECTS.includes(e));
+
+      await db.sessions.add({
+        datetime: local.toISOString().slice(0, 16),
+        strain: sessionData.strain || '',
+        type: sessionData.type || '',
+        terpenes: sessionData.terpenes || [],
+        moodBefore: sessionData.moodBefore != null ? parseInt(sessionData.moodBefore) : null,
+        moodAfter: sessionData.moodAfter != null ? parseInt(sessionData.moodAfter) : null,
+        effects: validEffects,
+        notes: sessionData.notes || '',
+        rabbitHole: null,
+        photos: [],
+        location: sessionData.location || '',
+        audio: null,
+        audioDuration: null,
+        daveChat: [],
+        standalone: false,
+        source: 'dave-log',
+        createdAt: Date.now()
+      });
+
+      await refreshAll();
+
+      // Build Dave's confirmation message
+      const summary = sessionData.summary || 'Session logged, man.';
+      const details = [];
+      if (sessionData.strain) details.push('🌿 ' + sessionData.strain);
+      if (sessionData.type) details.push(sessionData.type);
+      if (sessionData.moodBefore != null && sessionData.moodAfter != null) {
+        details.push(`mood ${sessionData.moodBefore}→${sessionData.moodAfter}`);
+      }
+      if (validEffects.length) details.push(validEffects.join(', '));
+      if (sessionData.location) details.push('📍 ' + sessionData.location);
+
+      const confirmation = summary + (details.length ? '\n\nLogged: ' + details.join(' · ') : '') + '\n\nCheck it in History or the Vault, man. 📝';
+
+      // Remove typing indicator
+      const t = document.getElementById('typing-msg');
+      if (t) t.remove();
+
+      // Save Dave's confirmation
+      await db.daveMessages.add({ role: 'dave', content: confirmation, createdAt: Date.now() });
+      await loadDaveMessages();
+      renderChatMessages();
+      showToast('Session logged by Dave! 📝');
+
+    } catch (err) {
+      console.error('Dave log error:', err);
+      typingEl.textContent = 'Dave couldn\'t log that, man. Try again or log it manually.';
+      typingEl.classList.remove('typing');
+      typingEl.style.color = 'var(--danger)';
+    } finally {
+      daveIsTyping = false;
+      updateDaveStatus();
+    }
+  }
+
   async function sendToDave(text) {
     // Save user message
     await db.daveMessages.add({
@@ -6457,6 +6614,18 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
     typingEl.textContent = 'Dave is thinking...';
     container.appendChild(typingEl);
     scrollChatToBottom();
+
+    // Check for session logging trigger
+    const lowerText = text.toLowerCase().trim();
+    const logTriggers = ['log session', 'log smoke session', 'log this session',
+                         'log my session', 'save session', 'log a session',
+                         'new session', 'log this', 'create session'];
+    const isLogRequest = logTriggers.some(t => lowerText === t || lowerText.startsWith(t + ' ') || lowerText.includes('log session'));
+
+    if (isLogRequest) {
+      await handleDaveSessionLog(text, typingEl);
+      return;
+    }
 
     try {
       // Build context-aware system prompt
