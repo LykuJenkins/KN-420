@@ -1,6 +1,6 @@
 // The Stoner Book — Service Worker
 // Caches the app shell for offline use.
-const CACHE_NAME = 'stoner-book-v16';
+const CACHE_NAME = 'stoner-book-v17';
 const APP_SHELL = [
   './',
   './index.html',

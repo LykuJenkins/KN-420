@@ -2580,7 +2580,7 @@
 
         <div class="field">
           <label for="datetime">When</label>
-          <input type="datetime-local" id="datetime" required>
+          <input type="datetime-local" id="datetime">
         </div>
 
         <div class="field">
@@ -3577,8 +3577,13 @@
     });
     document.getElementById('wizard-next-2').addEventListener('click', () => goToWizardStep(3));
     document.getElementById('wizard-next-3').addEventListener('click', () => {
-      renderReviewSummary();
-      goToWizardStep(4);
+      try {
+        renderReviewSummary();
+        goToWizardStep(4);
+      } catch (err) {
+        console.error('Review render error:', err);
+        goToWizardStep(4);
+      }
     });
     // Back buttons
     document.getElementById('wizard-back-2').addEventListener('click', () => goToWizardStep(1));
