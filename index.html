@@ -1378,6 +1378,86 @@
     opacity: 0.6;
   }
 
+  /* Photo + Location fields */
+  .photo-section {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .photo-thumb {
+    width: 70px;
+    height: 70px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid var(--border-strong);
+    cursor: pointer;
+  }
+  .photo-add-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 10px;
+    border: 2px dashed var(--border-strong);
+    background: var(--bg-elev);
+    color: var(--text-mute);
+    cursor: pointer;
+    font-size: 24px;
+    display: grid;
+    place-items: center;
+    transition: all 0.15s;
+  }
+  .photo-add-btn:hover { border-color: var(--green); color: var(--green-bright); }
+  .photo-remove-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--danger);
+    color: white;
+    border: 2px solid var(--bg);
+    cursor: pointer;
+    font-size: 11px;
+    display: grid;
+    place-items: center;
+  }
+  .photo-wrap { position: relative; display: inline-block; }
+
+  .location-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .location-chip {
+    padding: 6px 12px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .location-chip:hover { border-color: var(--border-strong); color: var(--text); }
+  .location-chip.active {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: var(--green);
+    color: var(--green-bright);
+  }
+  .location-custom-input {
+    width: 100%;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .location-custom-input:focus { outline: none; border-color: var(--green); }
+
   /* Voice selector */
   .voice-select {
     background: var(--bg-elev);
@@ -2570,6 +2650,29 @@
           </div>
         </div>
 
+        <div class="field">
+          <label>📸 Photos</label>
+          <div class="photo-section" id="photo-section">
+            <button type="button" class="photo-add-btn" id="photo-add-btn" title="Add photo">+</button>
+            <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" multiple>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>📍 Location</label>
+          <div class="location-chips" id="location-chips">
+            <div class="location-chip" data-location="🏠 Home">🏠 Home</div>
+            <div class="location-chip" data-location="🌳 Outside">🌳 Outside</div>
+            <div class="location-chip" data-location="🏖️ Beach">🏖️ Beach</div>
+            <div class="location-chip" data-location="🚗 Car">🚗 Car</div>
+            <div class="location-chip" data-location="🎮 Gaming">🎮 Gaming</div>
+            <div class="location-chip" data-location="🎶 Music">🎶 Music</div>
+            <div class="location-chip" data-location="📚 Reading">📚 Reading</div>
+            <div class="location-chip" data-location="🛋️ Couch">🛋️ Couch</div>
+          </div>
+          <input type="text" class="location-custom-input" id="location-custom" placeholder="Or type your own spot...">
+        </div>
+
         <!-- Rabbit Hole Tracker -->
         <div class="rabbit-hole-section">
           <div class="rabbit-hole-header">
@@ -2958,6 +3061,8 @@
   let currentWizardStep = 1;
   let rabbitHoleWaypoints = [];
   let editingSessionDataOnly = false;
+  let sessionPhotos = [];
+  let selectedLocation = '';
 
   // ===== Service Worker (external sw.js file for proper PWA installation) =====
   if ('serviceWorker' in navigator) {
@@ -3334,6 +3439,7 @@
     setupVault();
     setupWizard();
     setupRabbitHole();
+    setupPhotosAndLocation();
     setupDaveFab();
     // Preload browser TTS voices (they load async in some browsers)
     if ('speechSynthesis' in window) {
@@ -3545,6 +3651,8 @@
       <div class="wizard-review-row"><span class="wizard-review-label">Notes</span><span class="wizard-review-value">${notes ? escapeHtml(notes.slice(0, 60)) + (notes.length > 60 ? '...' : '') : '—'}</span></div>
       <div class="wizard-review-row"><span class="wizard-review-label">Voice note</span><span class="wizard-review-value">${hasAudio}</span></div>
       <div class="wizard-review-row"><span class="wizard-review-label">🐰 Rabbit hole</span><span class="wizard-review-value">${escapeHtml(rabbitHolePreview)}</span></div>
+      <div class="wizard-review-row"><span class="wizard-review-label">📍 Location</span><span class="wizard-review-value">${selectedLocation ? escapeHtml(selectedLocation) : '—'}</span></div>
+      <div class="wizard-review-row"><span class="wizard-review-label">📸 Photos</span><span class="wizard-review-value">${sessionPhotos.length || '—'}</span></div>
     `;
   }
 
@@ -3553,6 +3661,130 @@
     document.getElementById('rabbit-hole-add').addEventListener('click', () => {
       addRabbitHoleWaypoint('');
     });
+  }
+
+  // ===== Photos + Location =====
+  function setupPhotosAndLocation() {
+    // Photo upload
+    const photoAddBtn = document.getElementById('photo-add-btn');
+    const photoInput = document.getElementById('photo-input');
+    if (photoAddBtn && photoInput) {
+      photoAddBtn.addEventListener('click', () => photoInput.click());
+      photoInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        for (const file of files) {
+          if (!file.type.startsWith('image/')) continue;
+          // Downscale to max 800px to keep storage reasonable
+          const blob = await downscaleImage(file, 800);
+          sessionPhotos.push(blob);
+        }
+        renderPhotos();
+        photoInput.value = '';
+      });
+    }
+
+    // Location chips
+    document.querySelectorAll('#location-chips .location-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#location-chips .location-chip').forEach(c => c.classList.remove('active'));
+        if (selectedLocation === chip.dataset.location) {
+          selectedLocation = '';
+        } else {
+          selectedLocation = chip.dataset.location;
+          chip.classList.add('active');
+        }
+      });
+    });
+
+    // Custom location input
+    const customInput = document.getElementById('location-custom');
+    if (customInput) {
+      customInput.addEventListener('input', (e) => {
+        selectedLocation = e.target.value.trim();
+        document.querySelectorAll('#location-chips .location-chip').forEach(c => c.classList.remove('active'));
+      });
+    }
+  }
+
+  function renderPhotos() {
+    const container = document.getElementById('photo-section');
+    if (!container) return;
+    const thumbs = sessionPhotos.map((blob, idx) => {
+      const url = URL.createObjectURL(blob);
+      return `<div class="photo-wrap">
+        <img src="${url}" class="photo-thumb" alt="Session photo ${idx + 1}">
+        <button type="button" class="photo-remove-btn" data-photo-idx="${idx}">✕</button>
+      </div>`;
+    }).join('');
+    container.innerHTML = thumbs + '<button type="button" class="photo-add-btn" id="photo-add-btn" title="Add photo">+</button>';
+    // Re-wire the add button
+    const newAddBtn = document.getElementById('photo-add-btn');
+    if (newAddBtn) {
+      newAddBtn.addEventListener('click', () => document.getElementById('photo-input').click());
+    }
+    // Wire remove buttons
+    container.querySelectorAll('.photo-remove-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.photoIdx);
+        sessionPhotos.splice(idx, 1);
+        renderPhotos();
+      });
+    });
+  }
+
+  function downscaleImage(file, maxSize) {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = Math.round(height * maxSize / width);
+              width = maxSize;
+            } else {
+              width = Math.round(width * maxSize / height);
+              height = maxSize;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.8);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function clearPhotosAndLocation() {
+    sessionPhotos = [];
+    selectedLocation = '';
+    const customInput = document.getElementById('location-custom');
+    if (customInput) customInput.value = '';
+    document.querySelectorAll('#location-chips .location-chip').forEach(c => c.classList.remove('active'));
+    renderPhotos();
+  }
+
+  function loadPhotosAndLocation(photos, location) {
+    sessionPhotos = photos || [];
+    selectedLocation = location || '';
+    const customInput = document.getElementById('location-custom');
+    if (customInput && location) {
+      // Check if it matches a preset
+      const preset = document.querySelector(`#location-chips .location-chip[data-location="${location}"]`);
+      if (preset) {
+        preset.classList.add('active');
+        customInput.value = '';
+      } else {
+        customInput.value = location;
+      }
+    }
+    renderPhotos();
   }
 
   function addRabbitHoleWaypoint(value) {
@@ -3642,6 +3874,8 @@
           const rabbitHole = getRabbitHoleData();
           session.notes = document.getElementById('notes').value.trim();
           session.rabbitHole = rabbitHole;
+          session.photos = sessionPhotos.length ? sessionPhotos : [];
+          session.location = selectedLocation || '';
           session.audio = recordedBlob || null;
           session.audioDuration = recordedBlob ? recSeconds : null;
           if (editingSessionId) {
@@ -3763,6 +3997,8 @@
     if (s.rabbitHole) {
       loadRabbitHole(s.rabbitHole);
     }
+    // Photos + Location
+    loadPhotosAndLocation(s.photos, s.location);
     // Lookup button state
     const strainVal = s.strain || '';
     document.getElementById('lookup-btn').disabled = !strainVal || !!findStrainInLibrary(strainVal);
@@ -3790,6 +4026,7 @@
     hideStrainInfo();
     clearRecording();
     clearRabbitHole();
+    clearPhotosAndLocation();
     exitEditMode();
     editingSessionDataOnly = false;
     goToWizardStep(1);
@@ -4123,6 +4360,21 @@
       ${s.notes ? `<div class="detail-section">
         <div class="detail-label">Notes & Ideas</div>
         <div class="detail-note">${escapeHtml(s.notes)}</div>
+      </div>` : ''}
+
+      ${s.location ? `<div class="detail-section">
+        <div class="detail-label">📍 Location</div>
+        <div class="detail-value">${escapeHtml(s.location)}</div>
+      </div>` : ''}
+
+      ${(s.photos && s.photos.length) ? `<div class="detail-section">
+        <div class="detail-label">📸 Photos (${s.photos.length})</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          ${s.photos.map((blob, i) => {
+            const url = URL.createObjectURL(blob);
+            return `<img src="${url}" class="photo-thumb" style="width:100px;height:100px" alt="Photo ${i+1}" onclick="window.open('${url}','_blank')">`;
+          }).join('')}
+        </div>
       </div>` : ''}
 
       ${s.rabbitHole ? renderRabbitHoleDisplay(s.rabbitHole) : ''}
@@ -7390,6 +7642,10 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
           session.audio = await blobToBase64(s.audio);
           session.audioType = s.audio.type;
         }
+        if (s.photos && s.photos.length) {
+          session.photos = await Promise.all(s.photos.map(p => blobToBase64(p)));
+          session.photoTypes = s.photos.map(p => p.type || 'image/jpeg');
+        }
         exported.push(session);
       }
       const customStrains = await db.customStrains.toArray();
@@ -7437,6 +7693,11 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         delete session.id;
         if (typeof session.audio === 'string' && session.audio.startsWith('data:')) {
           session.audio = await base64ToBlob(session.audio, session.audioType);
+        }
+        if (session.photos && session.photos.length && typeof session.photos[0] === 'string') {
+          const types = session.photoTypes || [];
+          session.photos = await Promise.all(session.photos.map((p, i) => base64ToBlob(p, types[i] || 'image/jpeg')));
+          delete session.photoTypes;
         }
         await db.sessions.add(session);
         imported++;
