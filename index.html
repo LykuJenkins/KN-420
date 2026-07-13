@@ -2177,20 +2177,21 @@
 
   .dave-popup {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     width: 100%;
-    max-width: 500px;
-    margin-left: auto;
     background: var(--bg);
-    border: none;
-    z-index: 250;
+    z-index: 350;
     display: none;
     flex-direction: column;
     overflow: hidden;
     animation: dave-popup-slide 0.3s ease;
-    overscroll-behavior: contain;
   }
   .dave-popup.open { display: flex; }
+  /* Hide bottom nav and FAB when Dave popup is open on mobile */
+  .dave-popup.open ~ nav { display: none; }
   @keyframes dave-popup-slide {
     from { transform: translateY(100%); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
@@ -2303,10 +2304,12 @@
 
   @media (min-width: 500px) {
     .dave-popup {
-      inset: auto;
+      top: auto;
+      left: auto;
+      max-width: 500px;
+      margin-left: auto;
       bottom: 90px;
       right: 20px;
-      margin-left: 0;
       border-radius: 16px;
       height: 600px;
       max-height: calc(100dvh - 120px);
