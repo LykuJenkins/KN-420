@@ -2772,6 +2772,7 @@
 
     <div class="sub-tabs" id="insight-sub-tabs">
       <button class="sub-tab active" data-subtab="overview">📊 Overview</button>
+      <button class="sub-tab" data-subtab="patterns">🧠 Patterns</button>
       <button class="sub-tab" data-subtab="hours">🕐 Hours</button>
       <button class="sub-tab" data-subtab="days">📅 Days</button>
       <button class="sub-tab" data-subtab="year">🗓️ Year</button>
@@ -6902,6 +6903,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
 
     switch (currentInsightSubtab) {
       case 'overview': renderInsightOverview(container, sessions); break;
+      case 'patterns': renderInsightPatterns(container, sessions); break;
       case 'hours': renderInsightHours(container, sessions); break;
       case 'days': renderInsightDays(container, sessions); break;
       case 'year': renderInsightYear(container, sessions); break;
@@ -7020,6 +7022,254 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         `).join('')}
       </div>` : ''}
     `;
+  }
+
+  // ---- Patterns sub-tab: trend recognition + smart suggestions ----
+  function renderInsightPatterns(container, sessions) {
+    const liftSessions = sessions.filter(s => s.moodBefore != null && s.moodAfter != null);
+
+    if (sessions.length < 3) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🧠</div>
+          <div class="empty-state-text">Log at least 3 sessions with mood tracking to unlock pattern recognition, man.</div>
+        </div>`;
+      return;
+    }
+
+    // --- Terpene → Mood Lift correlations ---
+    const terpeneStats = {}; // terpene → { count, totalLift, sessions: [] }
+    liftSessions.forEach(s => {
+      const lift = s.moodAfter - s.moodBefore;
+      (s.terpenes || []).forEach(t => {
+        const key = t.toLowerCase().trim();
+        if (!terpeneStats[key]) terpeneStats[key] = { count: 0, totalLift: 0, strains: new Set() };
+        terpeneStats[key].count++;
+        terpeneStats[key].totalLift += lift;
+        if (s.strain) terpeneStats[key].strains.add(s.strain);
+      });
+    });
+
+    const terpenePatterns = Object.entries(terpeneStats)
+      .filter(([_, v]) => v.count >= 2)
+      .map(([name, v]) => ({
+        name,
+        count: v.count,
+        avgLift: v.totalLift / v.count,
+        strains: Array.from(v.strains).slice(0, 3)
+      }))
+      .sort((a, b) => b.avgLift - a.avgLift);
+
+    // --- Strain → Mood Lift correlations ---
+    const strainStats = {};
+    liftSessions.forEach(s => {
+      if (!s.strain) return;
+      const lift = s.moodAfter - s.moodBefore;
+      if (!strainStats[s.strain]) strainStats[s.strain] = { count: 0, totalLift: 0 };
+      strainStats[s.strain].count++;
+      strainStats[s.strain].totalLift += lift;
+    });
+
+    const strainPatterns = Object.entries(strainStats)
+      .filter(([_, v]) => v.count >= 2)
+      .map(([name, v]) => ({ name, count: v.count, avgLift: v.totalLift / v.count }))
+      .sort((a, b) => b.avgLift - a.avgLift);
+
+    // --- Effect → Mood Lift correlations ---
+    const effectStats = {};
+    liftSessions.forEach(s => {
+      const lift = s.moodAfter - s.moodBefore;
+      (s.effects || []).forEach(e => {
+        if (!effectStats[e]) effectStats[e] = { count: 0, totalLift: 0 };
+        effectStats[e].count++;
+        effectStats[e].totalLift += lift;
+      });
+    });
+
+    const effectPatterns = Object.entries(effectStats)
+      .filter(([_, v]) => v.count >= 2)
+      .map(([name, v]) => ({ name, count: v.count, avgLift: v.totalLift / v.count }))
+      .sort((a, b) => b.avgLift - a.avgLift);
+
+    // --- Session Vibes (location) → Mood Lift ---
+    const vibesStats = {};
+    liftSessions.forEach(s => {
+      if (!s.location) return;
+      const lift = s.moodAfter - s.moodBefore;
+      if (!vibesStats[s.location]) vibesStats[s.location] = { count: 0, totalLift: 0 };
+      vibesStats[s.location].count++;
+      vibesStats[s.location].totalLift += lift;
+    });
+
+    const vibesPatterns = Object.entries(vibesStats)
+      .filter(([_, v]) => v.count >= 2)
+      .map(([name, v]) => ({ name, count: v.count, avgLift: v.totalLift / v.count }))
+      .sort((a, b) => b.avgLift - a.avgLift);
+
+    // --- Generate smart suggestions ---
+    const suggestions = [];
+
+    // Best terpene suggestion
+    if (terpenePatterns.length > 0 && terpenePatterns[0].avgLift > 0) {
+      const best = terpenePatterns[0];
+      suggestions.push({
+        icon: '🌿',
+        text: `Every time you hit with <strong>${escapeHtml(best.name)}</strong>, your mood lifts an average of <strong>+${best.avgLift.toFixed(1)}</strong>. That's your sunshine terpene, man.`
+      });
+    }
+
+    // Worst terpene warning
+    if (terpenePatterns.length > 1 && terpenePatterns[terpenePatterns.length - 1].avgLift < 0) {
+      const worst = terpenePatterns[terpenePatterns.length - 1];
+      suggestions.push({
+        icon: '⚠️',
+        text: `<strong>${escapeHtml(worst.name)}</strong> tends to bring you down (avg <strong>${worst.avgLift.toFixed(1)}</strong>). Maybe skip that one when you're already low, man.`
+      });
+    }
+
+    // Best strain suggestion
+    if (strainPatterns.length > 0 && strainPatterns[0].avgLift > 0) {
+      const best = strainPatterns[0];
+      suggestions.push({
+        icon: '🏆',
+        text: `<strong>${escapeHtml(best.name)}</strong> is your best strain — avg mood lift <strong>+${best.avgLift.toFixed(1)}</strong> across ${best.count} sessions. That's your go-to, man.`
+      });
+    }
+
+    // Best vibes suggestion
+    if (vibesPatterns.length > 0 && vibesPatterns[0].avgLift > 0) {
+      const best = vibesPatterns[0];
+      suggestions.push({
+        icon: '✨',
+        text: `You vibe best at <strong>${escapeHtml(best.name)}</strong> — avg lift <strong>+${best.avgLift.toFixed(1)}</strong>. That setting hits different, man.`
+      });
+    }
+
+    // Effect correlation
+    if (effectPatterns.length > 0 && effectPatterns[0].avgLift > 0) {
+      const best = effectPatterns[0];
+      suggestions.push({
+        icon: '💫',
+        text: `When you feel <strong>${escapeHtml(best.name)}</strong>, your mood lifts <strong>+${best.avgLift.toFixed(1)}</strong> on average. Chase that effect, man.`
+      });
+    }
+
+    // Try next suggestion
+    if (terpenePatterns.length > 0) {
+      const untriedTerpenes = ['limonene', 'myrcene', 'caryophyllene', 'pinene', 'linalool', 'humulene', 'terpinolene', 'ocimene']
+        .filter(t => !terpeneStats[t]);
+      if (untriedTerpenes.length > 0) {
+        suggestions.push({
+          icon: '🧪',
+          text: `You haven't tried <strong>${escapeHtml(untriedTerpenes[0])}</strong> yet. Wanna expand your horizons, man?`
+        });
+      }
+    }
+
+    // --- Render ---
+    let html = '';
+
+    // Smart suggestions
+    if (suggestions.length > 0) {
+      html += `<div class="insight-section">
+        <h3>🧠 Smart Suggestions</h3>
+        <p style="font-size:12px;color:var(--text-mute);margin-bottom:16px">Trends we've noticed in your sessions, man.</p>`;
+      suggestions.forEach(s => {
+        html += `<div class="insight-card" style="margin-bottom:10px">
+          <span style="font-size:18px;margin-right:6px">${s.icon}</span> ${s.text}
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // Terpene patterns
+    if (terpenePatterns.length > 0) {
+      html += `<div class="insight-section" style="margin-top:24px">
+        <h3>🌿 Terpene Trends</h3>
+        <p style="font-size:12px;color:var(--text-mute);margin-bottom:16px">How each terpene affects your mood (min 2 sessions).</p>`;
+      terpenePatterns.forEach(p => {
+        const color = p.avgLift > 0 ? 'var(--green-bright)' : p.avgLift < 0 ? 'var(--danger)' : 'var(--text-dim)';
+        const sign = p.avgLift > 0 ? '+' : '';
+        html += `<div class="leaderboard-row">
+          <div class="rank">${renderTerpeneTag(p.name) ? '' : '🌿'}</div>
+          <div style="flex:1">
+            <div class="lb-name">${escapeHtml(p.name)} ${renderTerpeneTag(p.name) ? '' : ''}</div>
+            <div class="lb-bar"><div class="lb-bar-fill" style="width:${Math.min(Math.abs(p.avgLift) * 40, 100)}%;background:${color}"></div></div>
+            <div class="lb-meta" style="margin-top:4px">${sign}${p.avgLift.toFixed(2)} avg · ${p.count} sessions${p.strains.length ? ' · ' + p.strains.map(escapeHtml).join(', ') : ''}</div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // Strain patterns
+    if (strainPatterns.length > 0) {
+      html += `<div class="insight-section" style="margin-top:24px">
+        <h3>🏆 Strain Trends</h3>
+        <p style="font-size:12px;color:var(--text-mute);margin-bottom:16px">Your best and worst strains by mood lift (min 2 sessions).</p>`;
+      strainPatterns.forEach((p, i) => {
+        const color = p.avgLift > 0 ? 'var(--green-bright)' : p.avgLift < 0 ? 'var(--danger)' : 'var(--text-dim)';
+        const sign = p.avgLift > 0 ? '+' : '';
+        html += `<div class="leaderboard-row">
+          <div class="rank">${i + 1}</div>
+          <div style="flex:1">
+            <div class="lb-name">${escapeHtml(p.name)}</div>
+            <div class="lb-bar"><div class="lb-bar-fill" style="width:${Math.min(Math.abs(p.avgLift) * 40, 100)}%;background:${color}"></div></div>
+            <div class="lb-meta" style="margin-top:4px">${sign}${p.avgLift.toFixed(2)} avg · ${p.count} sessions</div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // Vibe patterns
+    if (vibesPatterns.length > 0) {
+      html += `<div class="insight-section" style="margin-top:24px">
+        <h3>✨ Vibe Trends</h3>
+        <p style="font-size:12px;color:var(--text-mute);margin-bottom:16px">Which settings hit best for you.</p>`;
+      vibesPatterns.forEach(p => {
+        const color = p.avgLift > 0 ? 'var(--green-bright)' : p.avgLift < 0 ? 'var(--danger)' : 'var(--text-dim)';
+        const sign = p.avgLift > 0 ? '+' : '';
+        html += `<div class="leaderboard-row">
+          <div class="rank">✨</div>
+          <div style="flex:1">
+            <div class="lb-name">${escapeHtml(p.name)}</div>
+            <div class="lb-bar"><div class="lb-bar-fill" style="width:${Math.min(Math.abs(p.avgLift) * 40, 100)}%;background:${color}"></div></div>
+            <div class="lb-meta" style="margin-top:4px">${sign}${p.avgLift.toFixed(2)} avg · ${p.count} sessions</div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // Effect patterns
+    if (effectPatterns.length > 0) {
+      html += `<div class="insight-section" style="margin-top:24px">
+        <h3>💫 Effect Trends</h3>
+        <p style="font-size:12px;color:var(--text-mute);margin-bottom:16px">Which effects correlate with mood lift.</p>`;
+      effectPatterns.forEach(p => {
+        const color = p.avgLift > 0 ? 'var(--green-bright)' : p.avgLift < 0 ? 'var(--danger)' : 'var(--text-dim)';
+        const sign = p.avgLift > 0 ? '+' : '';
+        html += `<div class="leaderboard-row">
+          <div class="rank">💫</div>
+          <div style="flex:1">
+            <div class="lb-name">${escapeHtml(p.name)}</div>
+            <div class="lb-bar"><div class="lb-bar-fill" style="width:${Math.min(Math.abs(p.avgLift) * 40, 100)}%;background:${color}"></div></div>
+            <div class="lb-meta" style="margin-top:4px">${sign}${p.avgLift.toFixed(2)} avg · ${p.count} sessions</div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    if (!html) {
+      html = `<div class="empty-state">
+        <div class="empty-state-icon">🧠</div>
+        <div class="empty-state-text">Not enough mood data yet. Log more sessions with mood before/after to unlock pattern recognition.</div>
+      </div>`;
+    }
+
+    container.innerHTML = html;
   }
 
   // ---- Hours sub-tab: 24h heatmap ----
