@@ -6270,7 +6270,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
   let daveTTSRateLimited = false; // Set to true if we hit a rate limit error
 
   function getTTSLengthLimit() {
-    return parseInt(localStorage.getItem('dave_tts_length_limit') || '500');
+    return parseInt(localStorage.getItem('dave_tts_length_limit') || '99999');
   }
 
   async function generateDaveSpeech(text) {
@@ -6953,13 +6953,13 @@ Only extract what was actually mentioned. Don't make stuff up.`;
       <div class="dave-settings-row">
         <div class="dave-settings-label">
           <div class="dave-settings-title">Audio length limit</div>
-          <div class="dave-settings-desc">Caps how much text Dave reads aloud per message. Full text is always visible to read.</div>
+          <div class="dave-settings-desc">How much text Dave reads aloud per message. Default is no limit — he reads the whole thing. Lower it if you want to save ElevenLabs quota.</div>
         </div>
         <select class="voice-select" id="tts-length-select">
           <option value="200" ${getTTSLengthLimit() === 200 ? 'selected' : ''}>Short (200 chars)</option>
-          <option value="500" ${getTTSLengthLimit() === 500 ? 'selected' : ''}>Medium (500 chars) — default</option>
+          <option value="500" ${getTTSLengthLimit() === 500 ? 'selected' : ''}>Medium (500 chars)</option>
           <option value="1000" ${getTTSLengthLimit() === 1000 ? 'selected' : ''}>Long (1000 chars)</option>
-          <option value="99999" ${getTTSLengthLimit() === 99999 ? 'selected' : ''}>No limit</option>
+          <option value="99999" ${getTTSLengthLimit() === 99999 ? 'selected' : ''}>No limit — default</option>
         </select>
       </div>
 
