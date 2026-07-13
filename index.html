@@ -5645,7 +5645,7 @@ Never refuse to engage just because cannabis is the topic (where legal). Be a re
         // Greeting message from Dave
         await db.daveMessages.add({
           role: 'dave',
-          content: "*knock knock* \n\nWho is it? \n\nIt's me Dave, man... open up. I've got the stuff. 🚪\n\nWho? \n\nIt's DAVE, man. Open up. 😄\n\n---\n\nHey, I'm Dave — your buddy in the Stoner Book. Here's what I can do around here, man:\n\n🌿 Chat about strains, terpenes, and effects\n📊 Help you figure out patterns in your sessions\n💭 Be a sounding board for ideas and deep thoughts\n🐰 Chat about your high dias right in the Vault — each entry has its own conversation\n🎙️ I can even read my replies aloud (tap the 🔊 button)\n\nSo what's on your mind, man?",
+          content: "*knock knock* \n\nWho is it? \n\nIt's me Dave, man... open up. I've got the stuff. 🚪\n\nWho? \n\nIt's DAVE, man. Open up. 😄\n\n---\n\nHey, I'm Dave — your buddy in the Stoner Book. Here's what I can do around here, man:\n\n🌿 Chat about strains, terpenes, and effects\n📊 Help you figure out patterns in your sessions\n💭 Be a sounding board for ideas and deep thoughts\n🐰 Chat about your high dias right in the Vault — each entry has its own conversation\n🎙️ I can even read my replies aloud (tap the 🔊 button)\n📝 **Log sessions for you!** Just tell me what you smoked, how you're feeling, and what effects you noticed — then say \"log session\" and I'll save it to your History and Vault automatically.\n📤 Tap the 📤 button on any of my responses to save it to the Vault as a note\n\nType \"!help\" or ask \"what can you do\" anytime to see this again.\n\nSo what's on your mind, man?",
           createdAt: Date.now()
         });
         await loadDaveMessages();
@@ -6630,6 +6630,24 @@ Only extract what was actually mentioned. Don't make stuff up.`;
       return;
     }
 
+    // Check for help trigger
+    const helpTriggers = ['!help', 'what can you do', 'what can dave do', 'help', 'commands', 'what do you do'];
+    const isHelpRequest = helpTriggers.some(t => lowerText === t || lowerText.startsWith(t + ' ') || lowerText.includes('what can you do'));
+
+    if (isHelpRequest) {
+      const helpText = "*knock knock* \n\nWho is it? \n\nIt's me Dave, man... open up. I've got the stuff. 🚪\n\nWho? \n\nIt's DAVE, man. Open up. 😄\n\n---\n\nHey, I'm Dave — your buddy in the Stoner Book. Here's what I can do around here, man:\n\n🌿 Chat about strains, terpenes, and effects\n📊 Help you figure out patterns in your sessions\n💭 Be a sounding board for ideas and deep thoughts\n🐰 Chat about your high dias right in the Vault — each entry has its own conversation\n🎙️ I can even read my replies aloud (tap the 🔊 button)\n📝 **Log sessions for you!** Just tell me what you smoked, how you're feeling, and what effects you noticed — then say \"log session\" and I'll save it to your History and Vault automatically.\n📤 Tap the 📤 button on any of my responses to save it to the Vault as a note\n\nType \"!help\" or ask \"what can you do\" anytime to see this again.\n\nSo what's on your mind, man?";
+
+      const t = document.getElementById('typing-msg');
+      if (t) t.remove();
+
+      await db.daveMessages.add({ role: 'dave', content: helpText, createdAt: Date.now() });
+      await loadDaveMessages();
+      renderChatMessages();
+      daveIsTyping = false;
+      updateDaveStatus();
+      return;
+    }
+
     try {
       // Build context-aware system prompt
       const systemPrompt = buildContextualPrompt();
@@ -6971,6 +6989,23 @@ Only extract what was actually mentioned. Don't make stuff up.`;
 
       <div style="font-size:11px;color:var(--text-mute);margin-top:20px;line-height:1.5">
         Chat: Perplexity AI (sonar model). Voice: Natural Language TTS (browser) or ElevenLabs AI (premium). Your API keys are stored locally and sent only to Perplexity and ElevenLabs.
+      </div>
+
+      <div style="background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-top:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--green-bright);margin-bottom:8px">🚪 Dave Commands</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;white-space:pre-wrap">Type these in Dave's chat:
+
+📝 <strong>log session</strong> — Tell Dave what you smoked, then say this to auto-log a session
+🔍 <strong>log session [strain name]</strong> — Log with a specific strain
+📢 <strong>!help</strong> or <strong>what can you do</strong> — Show Dave's intro again
+🔊 <strong>Tap 🔊</strong> on any Dave message — Read it aloud
+📤 <strong>Tap 📤</strong> on any Dave message — Save to Vault as a note
+
+Dave can also:
+• Chat about strains, terpenes, effects
+• See your recent sessions for personalized advice (if sharing is on)
+• Chat in the Vault — each high dia has its own Dave conversation
+• Log sessions from natural conversation — just tell him about your session</div>
       </div>
     `;
 
