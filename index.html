@@ -4459,9 +4459,16 @@
     } else if (chatCount === 0) {
       chatHtml = '<div class="dave-chat-empty">Ask Dave about this session, man.</div>';
     } else {
-      chatHtml = chat.map(m => {
+      chatHtml = chat.map((m, idx) => {
         const cls = m.role === 'user' ? 'user' : 'dave';
-        return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+        if (m.role === 'user') {
+          return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+        }
+        // Dave message — add speak + share buttons
+        return `<div class="msg ${cls}" style="position:relative;padding-right:36px">${escapeHtml(m.content)}
+          <button class="speak-btn" data-modal-chat-session="${session.id}" data-modal-chat-idx="${idx}" title="Read aloud">🔊</button>
+          <button class="share-vault-btn" data-modal-share-session="${session.id}" data-modal-chat-idx="${idx}" title="Save to Vault">📤</button>
+        </div>`;
       }).join('');
     }
 
@@ -4631,6 +4638,32 @@
         }
       });
     }
+
+    // Wire up speak + share buttons in the modal Dave chat
+    const modalChatContainer = document.getElementById('modal-dave-chat-' + id);
+    if (modalChatContainer) {
+      modalChatContainer.querySelectorAll('.speak-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const sessionId = parseInt(btn.dataset.modalChatSession);
+          const chatIdx = parseInt(btn.dataset.modalChatIdx);
+          const session = allSessions.find(s => s.id === sessionId);
+          if (session && session.daveChat && session.daveChat[chatIdx]) {
+            // Use a temporary index-based approach for modal chat TTS
+            speakModalDaveMessage(session.daveChat[chatIdx].content, btn);
+          }
+        });
+      });
+      modalChatContainer.querySelectorAll('.share-vault-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const sessionId = parseInt(btn.dataset.modalShareSession);
+          const chatIdx = parseInt(btn.dataset.modalChatIdx);
+          const session = allSessions.find(s => s.id === sessionId);
+          if (session && session.daveChat && session.daveChat[chatIdx]) {
+            shareModalDaveMessageToVault(session, chatIdx, btn);
+          }
+        });
+      });
+    }
   }
 
   function closeModal() {
@@ -4758,6 +4791,32 @@
           e.preventDefault();
           const sessionId = parseInt(input.id.replace('vault-dave-input-', ''));
           sendVaultDaveMessage(sessionId);
+        }
+      });
+    });
+
+    // Wire up speak buttons in vault Dave chats
+    list.querySelectorAll('.speak-btn[data-vault-chat-session]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const sessionId = parseInt(btn.dataset.vaultChatSession);
+        const chatIdx = parseInt(btn.dataset.vaultChatIdx);
+        const session = allSessions.find(s => s.id === sessionId);
+        if (session && session.daveChat && session.daveChat[chatIdx]) {
+          speakModalDaveMessage(session.daveChat[chatIdx].content, btn);
+        }
+      });
+    });
+
+    // Wire up share buttons in vault Dave chats
+    list.querySelectorAll('.share-vault-btn[data-vault-share-session]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const sessionId = parseInt(btn.dataset.vaultShareSession);
+        const chatIdx = parseInt(btn.dataset.vaultChatIdx);
+        const session = allSessions.find(s => s.id === sessionId);
+        if (session && session.daveChat && session.daveChat[chatIdx]) {
+          shareModalDaveMessageToVault(session, chatIdx, btn);
         }
       });
     });
@@ -5005,14 +5064,20 @@
     const chat = session.daveChat || [];
     const apiKey = getApiKey();
     if (!apiKey) {
-      return '<div class="dave-chat-empty">Connect Dave in the Dave tab first to chat about this entry.</div>';
+      return '<div class="dave-chat-empty">Connect Dave (tap the 🚪 button) to chat about this entry.</div>';
     }
     if (chat.length === 0) {
       return '<div class="dave-chat-empty">Ask Dave about this idea, man. He\'ll help you explore it.</div>';
     }
-    return chat.map(m => {
+    return chat.map((m, idx) => {
       const cls = m.role === 'user' ? 'user' : 'dave';
-      return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+      if (m.role === 'user') {
+        return `<div class="msg ${cls}">${escapeHtml(m.content)}</div>`;
+      }
+      return `<div class="msg ${cls}" style="position:relative;padding-right:36px">${escapeHtml(m.content)}
+        <button class="speak-btn" data-vault-chat-session="${session.id}" data-vault-chat-idx="${idx}" title="Read aloud">🔊</button>
+        <button class="share-vault-btn" data-vault-share-session="${session.id}" data-vault-chat-idx="${idx}" title="Save to Vault">📤</button>
+      </div>`;
     }).join('');
   }
 
@@ -5392,6 +5457,65 @@
     } finally {
       input.disabled = false;
       input.focus();
+    }
+  }
+
+  // Speak a Dave message from the session detail modal
+  function speakModalDaveMessage(text, btn) {
+    const engine = getTTSEngine();
+    if (engine === 'browser') {
+      speakWithBrowserTTS(text, btn);
+    } else if (engine === 'elevenlabs') {
+      speakWithElevenLabs(text, btn);
+    }
+  }
+
+  // Share a Dave message from the session detail modal to the Vault
+  async function shareModalDaveMessageToVault(session, chatIdx, btn) {
+    const msg = session.daveChat[chatIdx];
+    if (!msg) return;
+
+    let context = '';
+    if (chatIdx > 0 && session.daveChat[chatIdx - 1] && session.daveChat[chatIdx - 1].role === 'user') {
+      context = 'You asked: "' + session.daveChat[chatIdx - 1].content + '"\n\nDave said:\n';
+    }
+
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60000);
+
+    try {
+      await db.sessions.add({
+        datetime: local.toISOString().slice(0, 16),
+        strain: '',
+        type: '',
+        terpenes: [],
+        moodBefore: null,
+        moodAfter: null,
+        effects: [],
+        notes: context + msg.content,
+        rabbitHole: null,
+        photos: [],
+        location: '',
+        audio: null,
+        audioDuration: null,
+        daveChat: [],
+        standalone: true,
+        source: 'dave-chat',
+        createdAt: Date.now()
+      });
+      await refreshAll();
+      showToast('Saved to Vault 📤');
+      const originalText = btn.textContent;
+      btn.textContent = '✓';
+      btn.style.color = 'var(--green-bright)';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.color = '';
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      showToast('Could not save to Vault');
     }
   }
 
